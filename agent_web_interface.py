@@ -3,14 +3,25 @@ Web Interface for Multi-Agent System
 REST API using Flask
 """
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from multi_agent_interface import AgentInterface, Agent, Task, TaskResult
+from agent_examples import LoggerAgent, NotificationAgent
 import json
 from datetime import datetime
 
 
 app = Flask(__name__)
 interface = AgentInterface()
+
+# Register the custom agents so the dashboard exposes the full set
+interface.register_agent(LoggerAgent())
+interface.register_agent(NotificationAgent())
+
+
+@app.route("/", methods=["GET"])
+def index():
+    """Serve the HTML dashboard"""
+    return render_template("index.html")
 
 
 @app.route("/api/health", methods=["GET"])

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Agent System — Dashboard</title>
+    <style>
+        :root {
+            --bg: #0f1117;
+            --panel: #1a1d27;
+            --panel-2: #232735;
+            --border: #2d3245;
+            --text: #e4e7ef;
+            --muted: #8a90a2;
+            --accent: #6366f1;
+            --accent-hover: #4f52d6;
+            --green: #22c55e;
+            --red: #ef4444;
+            --amber: #f59e0b;
+            --blue: #3b82f6;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            padding: 24px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        h1 { font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        h1 .logo {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: linear-gradient(135deg, var(--accent), #a855f7);
+            display: grid; place-items: center; font-size: 18px;
+        }
+        .status-dot {
+            display: inline-flex; align-items: center; gap: 6px;
+            font-size: 13px; color: var(--muted);
+        }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); }
+        .dot.ok { background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+        .stat-card {
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 12px; padding: 18px;
+        }
+        .stat-card .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card .value { font-size: 30px; font-weight: 700; margin-top: 4px; }
+        .stat-card.total .value { color: var(--text); }
+        .stat-card.completed .value { color: var(--green); }
+        .stat-card.failed .value { color: var(--red); }
+        .stat-card.pending .value { color: var(--amber); }
+
+        .grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 20px; }
+        @media (max-width: 900px) {
+            .grid { grid-template-columns: 1fr; }
+            .stats { grid-template-columns: repeat(2, 1fr); }
+        }
+        .panel {
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 12px; padding: 20px;
+        }
+        .panel h2 {
+            font-size: 15px; font-weight: 600; margin-bottom: 16px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .panel h2 .count { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+        label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; margin-top: 14px; }
+        label:first-of-type { margin-top: 0; }
+        input, select, textarea {
+            width: 100%; background: var(--panel-2); border: 1px solid var(--border);
+            color: var(--text); border-radius: 8px; padding: 10px 12px; font-size: 14px;
+            font-family: inherit;
+        }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+        button {
+            background: var(--accent); color: white; border: none;
+            border-radius: 8px; padding: 10px 16px; font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: background 0.15s;
+        }
+        button:hover { background: var(--accent-hover); }
+        button.secondary { background: var(--panel-2); border: 1px solid var(--border); }
+        button.secondary:hover { background: var(--border); }
+        button.sm { padding: 5px 12px; font-size: 12px; }
+        .btn-row { display: flex; gap: 10px; margin-top: 18px; }
+        .btn-row button { flex: 1; }
+
+        .agent {
+            display: flex; align-items: center; gap: 12px;
+            padding: 12px; border-radius: 10px; background: var(--panel-2);
+            margin-bottom: 10px;
+        }
+        .agent .avatar {
+            width: 38px; height: 38px; border-radius: 9px; display: grid; place-items: center;
+            font-size: 18px; background: var(--border); flex-shrink: 0;
+        }
+        .agent .info { flex: 1; min-width: 0; }
+        .agent .name { font-weight: 600; font-size: 14px; }
+        .agent .caps { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .agent .metrics { font-size: 12px; text-align: right; flex-shrink: 0; }
+        .agent .metrics .ok { color: var(--green); }
+        .agent .metrics .err { color: var(--red); }
+
+        .task {
+            padding: 12px 14px; border-radius: 10px; background: var(--panel-2);
+            margin-bottom: 10px; border-left: 3px solid var(--muted);
+        }
+        .task.completed { border-left-color: var(--green); }
+        .task.failed { border-left-color: var(--red); }
+        .task.pending { border-left-color: var(--amber); }
+        .task .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .task .tname { font-weight: 600; font-size: 14px; }
+        .task .meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+        .badge {
+            font-size: 11px; padding: 2px 9px; border-radius: 20px; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.3px;
+        }
+        .badge.completed { background: rgba(34,197,94,0.15); color: var(--green); }
+        .badge.failed { background: rgba(239,68,68,0.15); color: var(--red); }
+        .badge.pending { background: rgba(245,158,11,0.15); color: var(--amber); }
+        .task .output {
+            margin-top: 8px; padding: 8px 10px; background: var(--bg); border-radius: 6px;
+            font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px;
+            color: var(--muted); white-space: pre-wrap; word-break: break-word;
+            max-height: 120px; overflow: auto;
+        }
+        .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 24px 0; }
+        .toast {
+            position: fixed; bottom: 24px; right: 24px; background: var(--panel-2);
+            border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px;
+            font-size: 14px; transform: translateY(120%); transition: transform 0.3s;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 100; max-width: 320px;
+        }
+        .toast.show { transform: translateY(0); }
+        .toast.ok { border-left: 3px solid var(--green); }
+        .toast.err { border-left: 3px solid var(--red); }
+        .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1><span class="logo">🤖</span> Multi-Agent System</h1>
+        <span class="status-dot"><span class="dot" id="statusDot"></span> <span id="statusText">Connexion…</span></span>
+    </header>
+
+    <div class="stats">
+        <div class="stat-card total"><div class="label">Total</div><div class="value" id="statTotal">0</div></div>
+        <div class="stat-card completed"><div class="label">Terminées</div><div class="value" id="statCompleted">0</div></div>
+        <div class="stat-card failed"><div class="label">Échouées</div><div class="value" id="statFailed">0</div></div>
+        <div class="stat-card pending"><div class="label">En attente</div><div class="value" id="statPending">0</div></div>
+    </div>
+
+    <div class="grid">
+        <div>
+            <div class="panel" style="margin-bottom: 20px;">
+                <h2>Nouvelle tâche</h2>
+                <label>Nom</label>
+                <input id="taskName" placeholder="Ex: Calcul Fibonacci">
+
+                <label>Type</label>
+                <select id="taskType" onchange="renderFields()">
+                    <option value="calculate">calculate — calcul mathématique</option>
+                    <option value="log">log — journaliser un message</option>
+                    <option value="alert">alert — émettre une alerte</option>
+                    <option value="email">email — envoyer un email</option>
+                </select>
+
+                <div id="dynamicFields"></div>
+
+                <label>Priorité</label>
+                <input id="taskPriority" type="number" value="0" min="0">
+
+                <div class="btn-row">
+                    <button onclick="submitTask()">+ Créer la tâche</button>
+                    <button class="secondary" onclick="executeAll()">▶ Tout exécuter</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>Agents <span class="count" id="agentCount"></span></h2>
+                <div id="agentsList"></div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h2>Tâches <span class="count" id="taskCount"></span></h2>
+            <div id="tasksList"><div class="empty">Aucune tâche pour le moment.</div></div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "/api";
+const AGENT_ICONS = {
+    FileAgent: "📁", DataAgent: "📊", ComputeAgent: "🧮",
+    LoggerAgent: "📝", NotificationAgent: "📨"
+};
+
+const FIELDS = {
+    calculate: [
+        { id: "expression", label: "Expression", placeholder: "sum([1,1,2,3,5,8,13])", type: "text" }
+    ],
+    log: [
+        { id: "message", label: "Message", placeholder: "Système démarré", type: "text" },
+        { id: "level", label: "Niveau", placeholder: "INFO", type: "text", default: "INFO" }
+    ],
+    alert: [
+        { id: "message", label: "Message", placeholder: "Connexion DB échouée", type: "text" }
+    ],
+    email: [
+        { id: "recipient", label: "Destinataire", placeholder: "admin@example.com", type: "text" },
+        { id: "message", label: "Message", placeholder: "Tâche terminée", type: "text" }
+    ]
+};
+
+function renderFields() {
+    const type = document.getElementById("taskType").value;
+    const container = document.getElementById("dynamicFields");
+    container.innerHTML = FIELDS[type].map(f => `
+        <label>${f.label}</label>
+        <input id="field_${f.id}" placeholder="${f.placeholder}" value="${f.default || ''}">
+    `).join("");
+}
+
+function buildParams(type) {
+    const params = { action: type };
+    FIELDS[type].forEach(f => {
+        params[f.id] = document.getElementById("field_" + f.id).value;
+    });
+    if (type === "calculate") params.context = {};
+    return params;
+}
+
+async function submitTask() {
+    const name = document.getElementById("taskName").value.trim();
+    const type = document.getElementById("taskType").value;
+    const priority = parseInt(document.getElementById("taskPriority").value) || 0;
+    if (!name) { toast("Le nom est requis", false); return; }
+
+    try {
+        const res = await fetch(`${API}/tasks`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, task_type: type, params: buildParams(type), priority })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            toast(`Tâche créée : ${data.task_id}`, true);
+            document.getElementById("taskName").value = "";
+            refresh();
+        } else {
+            toast(data.error || "Erreur", false);
+        }
+    } catch (e) { toast("Serveur injoignable", false); }
+}
+
+async function executeTask(id) {
+    try {
+        const res = await fetch(`${API}/tasks/${id}/execute`, { method: "POST" });
+        const data = await res.json();
+        toast(data.success ? `✓ ${id} exécutée` : `✗ ${data.error || 'Échec'}`, data.success);
+        refresh();
+    } catch (e) { toast("Serveur injoignable", false); }
+}
+
+async function executeAll() {
+    try {
+        const res = await fetch(`${API}/tasks/execute-all`, { method: "POST" });
+        const data = await res.json();
+        const n = (data.results || []).length;
+        toast(n ? `${n} tâche(s) exécutée(s)` : "Aucune tâche en attente", true);
+        refresh();
+    } catch (e) { toast("Serveur injoignable", false); }
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function renderAgents(agents) {
+    const entries = Object.entries(agents);
+    document.getElementById("agentCount").textContent = entries.length + " enregistrés";
+    document.getElementById("agentsList").innerHTML = entries.map(([name, a]) => `
+        <div class="agent">
+            <div class="avatar">${AGENT_ICONS[name] || "⚙️"}</div>
+            <div class="info">
+                <div class="name">${escapeHtml(name)}</div>
+                <div class="caps">${a.capabilities.join(" · ")}</div>
+            </div>
+            <div class="metrics">
+                <div class="ok">✓ ${a.tasks_completed}</div>
+                <div class="err">✗ ${a.tasks_failed}</div>
+            </div>
+        </div>
+    `).join("");
+}
+
+function renderTasks(tasks) {
+    document.getElementById("taskCount").textContent = tasks.length + " au total";
+    const list = document.getElementById("tasksList");
+    if (!tasks.length) { list.innerHTML = `<div class="empty">Aucune tâche pour le moment.</div>`; return; }
+    list.innerHTML = tasks.slice().reverse().map(t => {
+        const out = t.result ? `<div class="output">${escapeHtml(
+            t.result.success ? JSON.stringify(t.result.output) : (t.result.error || "")
+        )}</div>` : "";
+        const canRun = t.status === "pending";
+        return `
+        <div class="task ${t.status}">
+            <div class="top">
+                <div>
+                    <div class="tname">${escapeHtml(t.name)}</div>
+                    <div class="meta">${t.id} · ${t.task_type} · ${t.assigned_agent || "non assigné"} · prio ${t.priority}</div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                    <span class="badge ${t.status}">${t.status}</span>
+                    ${canRun ? `<button class="sm" onclick="executeTask('${t.id}')">▶</button>` : ""}
+                </div>
+            </div>
+            ${out}
+        </div>`;
+    }).join("");
+}
+
+async function refresh() {
+    try {
+        const [aRes, tRes, sRes] = await Promise.all([
+            fetch(`${API}/agents`), fetch(`${API}/tasks`), fetch(`${API}/statistics`)
+        ]);
+        const agents = await aRes.json();
+        const { tasks } = await tRes.json();
+        const stats = await sRes.json();
+
+        renderAgents(agents);
+        renderTasks(tasks);
+        document.getElementById("statTotal").textContent = stats.total_tasks;
+        document.getElementById("statCompleted").textContent = stats.completed;
+        document.getElementById("statFailed").textContent = stats.failed;
+        document.getElementById("statPending").textContent = stats.pending;
+
+        document.getElementById("statusDot").classList.add("ok");
+        document.getElementById("statusText").textContent = "Connecté";
+    } catch (e) {
+        document.getElementById("statusDot").classList.remove("ok");
+        document.getElementById("statusText").textContent = "Hors ligne";
+    }
+}
+
+let toastTimer;
+function toast(msg, ok) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.className = "toast show " + (ok ? "ok" : "err");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 3000);
+}
+
+renderFields();
+refresh();
+setInterval(refresh, 4000);
+</script>
+</body>
+</html>
