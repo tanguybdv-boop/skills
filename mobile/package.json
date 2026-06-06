@@ -1,0 +1,20 @@
+{
+  "name": "comptabilite-pro-mobile",
+  "version": "1.0.0",
+  "description": "Application mobile (Android/iOS) de comptabilité pour autoentrepreneur — Capacitor + PWA.",
+  "private": true,
+  "scripts": {
+    "add:android": "cap add android",
+    "sync": "cap sync",
+    "open:android": "cap open android",
+    "build:android": "cap sync android && cd android && ./gradlew assembleDebug",
+    "serve": "npx --yes http-server www -p 8099 -c-1"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.1.2"
+  }
+}

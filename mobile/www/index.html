@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comptabilité Pro — Portail Client</title>
+    <link rel="manifest" href="manifest.webmanifest">
+    <meta name="theme-color" content="#7c6cff">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="ComptaPro">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <style>
+        :root {
+            --bg: #0a0d14; --panel: #141925; --panel-2: #1b212f; --panel-3: #222a3a;
+            --border: #252d3f; --border-hi: #34405a;
+            --text: #eef1f8; --muted: #98a1b8; --muted-2: #6b7488;
+            --accent: #7c6cff; --accent-2: #9d8bff; --accent-press: #6354e6;
+            --green: #34d399; --green-bg: rgba(52,211,153,.12);
+            --red: #f87171; --red-bg: rgba(248,113,113,.12);
+            --amber: #fbbf24; --amber-bg: rgba(251,191,36,.12);
+            --blue: #60a5fa; --blue-bg: rgba(96,165,250,.12);
+            --shadow: 0 8px 30px rgba(0,0,0,.35); --shadow-sm: 0 2px 10px rgba(0,0,0,.22);
+            --radius: 16px; --radius-sm: 10px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--text); line-height: 1.55; padding: 28px;
+            background:
+                radial-gradient(1200px 600px at 12% -10%, rgba(124,108,255,.10), transparent 55%),
+                radial-gradient(900px 500px at 110% 0%, rgba(52,211,153,.06), transparent 50%),
+                var(--bg);
+            -webkit-font-smoothing: antialiased;
+        }
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 20px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 26px; flex-wrap: wrap; gap: 16px;
+        }
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .brand .logo {
+            width: 46px; height: 46px; border-radius: 13px; flex-shrink: 0;
+            display: grid; place-items: center; font-size: 24px;
+            background: linear-gradient(140deg, var(--accent), #b07bff 60%, var(--green));
+            box-shadow: 0 6px 18px rgba(124,108,255,.4);
+        }
+        h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+        .user-panel { display: flex; align-items: center; gap: 14px; }
+        .user-info { text-align: right; font-size: 13px; }
+        .user-name { font-weight: 700; }
+        .avatar {
+            width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+            font-weight: 700; color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            box-shadow: var(--shadow-sm);
+        }
+        button {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; border: none;
+            border-radius: var(--radius-sm); padding: 11px 18px; font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: transform .12s, box-shadow .15s, filter .15s; box-shadow: 0 4px 14px rgba(124,108,255,.30);
+        }
+        button:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,108,255,.42); }
+        button:active { transform: translateY(0); }
+        button.secondary { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); box-shadow: none; }
+        button.secondary:hover { background: var(--panel-3); border-color: var(--border-hi); transform: none; }
+        button.danger { background: linear-gradient(135deg, #f87171, #ef4444); box-shadow: 0 4px 14px rgba(248,113,113,.3); }
+        button.danger:hover { filter: brightness(1.05); }
+
+        /* Auth screens */
+        .screen { display: none; }
+        .screen.active { display: block; }
+        .auth-center { display: grid; place-items: center; min-height: 88vh; }
+        .auth-card {
+            background: linear-gradient(180deg, var(--panel), #11161f); border: 1px solid var(--border);
+            border-radius: 22px; padding: 40px; max-width: 410px; width: 100%; box-shadow: var(--shadow);
+        }
+        .auth-card h2 { margin-bottom: 22px; font-size: 20px; letter-spacing: -0.01em; }
+        label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; margin-top: 14px; font-weight: 500; }
+        label:first-of-type { margin-top: 0; }
+        input, select {
+            width: 100%; background: var(--panel-2); border: 1px solid var(--border); color: var(--text);
+            border-radius: var(--radius-sm); padding: 11px 13px; font-size: 14px; font-family: inherit;
+            transition: border-color .15s, box-shadow .15s;
+        }
+        input::placeholder { color: var(--muted-2); }
+        input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,108,255,.18); }
+        .btn-auth { width: 100%; margin-top: 22px; padding: 12px; }
+        .auth-link { text-align: center; margin-top: 18px; font-size: 13px; color: var(--muted); }
+        .auth-link a { color: var(--accent-2); cursor: pointer; text-decoration: none; font-weight: 600; }
+        .auth-link a:hover { text-decoration: underline; }
+        .error { background: var(--red-bg); border: 1px solid var(--red); color: var(--red); padding: 12px; border-radius: var(--radius-sm); font-size: 13px; margin-top: 14px; }
+        .success { background: var(--green-bg); border: 1px solid var(--green); color: var(--green); padding: 12px; border-radius: var(--radius-sm); font-size: 13px; margin-top: 14px; }
+
+        /* Dashboard */
+        .tabs {
+            display: flex; gap: 6px; margin-bottom: 26px; flex-wrap: wrap;
+            background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+            padding: 6px; box-shadow: var(--shadow-sm);
+        }
+        .tab { padding: 10px 16px; border: none; background: transparent; color: var(--muted); cursor: pointer; font-size: 13.5px; font-weight: 600; border-radius: 10px; transition: all 0.18s; }
+        .tab.active { color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 4px 14px rgba(124,108,255,.35); }
+        .tab:not(.active):hover { color: var(--text); background: var(--panel-2); }
+        .tab-content { display: none; animation: fade 0.25s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } }
+        .panel {
+            background: linear-gradient(180deg, var(--panel), #11161f); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 22px; box-shadow: var(--shadow);
+        }
+        .panel h2 { font-size: 16px; font-weight: 700; margin-bottom: 18px; letter-spacing: -0.01em; }
+        .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+        @media (max-width: 700px) { .summary { grid-template-columns: repeat(2, 1fr); } }
+        .summary-card {
+            background: linear-gradient(180deg, var(--panel-2), #161c28); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow-sm);
+            transition: transform .15s, border-color .15s;
+        }
+        .summary-card:hover { transform: translateY(-3px); border-color: var(--border-hi); }
+        .summary-card .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+        .summary-card .num { font-size: 22px; font-weight: 800; margin-top: 6px; letter-spacing: -0.02em; }
+        .stat { background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px 18px; margin-bottom: 12px; position: relative; overflow: hidden; }
+        .stat::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--muted-2); }
+        .stat.good::before { background: var(--green); }
+        .stat.bad::before { background: var(--red); }
+        .stat .label { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+        .stat .value { font-size: 25px; font-weight: 800; margin-top: 6px; letter-spacing: -0.02em; }
+        .stat.good .value { color: var(--green); }
+        .stat.bad .value { color: var(--red); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+        th { background: var(--panel-2); padding: 11px 12px; text-align: left; font-weight: 600; color: var(--muted); text-transform: uppercase; font-size: 11px; letter-spacing: .04em; }
+        th:first-child { border-radius: 8px 0 0 8px; } th:last-child { border-radius: 0 8px 8px 0; }
+        td { padding: 11px 12px; border-bottom: 1px solid var(--border); }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 30px; font-size: 11px; font-weight: 700; }
+        .badge.ok { background: var(--green-bg); color: var(--green); }
+        .badge.warn { background: var(--amber-bg); color: var(--amber); }
+        .toast {
+            position: fixed; bottom: 28px; right: 28px; background: var(--panel-3);
+            border: 1px solid var(--border-hi); border-radius: 14px; padding: 14px 18px; font-size: 14px; font-weight: 500;
+            transform: translateY(160%); transition: transform 0.35s cubic-bezier(.2,.9,.3,1);
+            box-shadow: var(--shadow); z-index: 100; max-width: 340px;
+        }
+        .toast.show { transform: translateY(0); }
+        .toast.ok { border-left: 4px solid var(--green); }
+        .toast.err { border-left: 4px solid var(--red); }
+        .empty { color: var(--muted); text-align: center; padding: 36px 0; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<!-- AUTHENTIFICATION -->
+<div id="authScreen" class="screen active">
+    <div class="auth-center">
+        <div class="auth-card">
+            <div style="text-align:center;margin-bottom:28px;">
+                <div class="logo" style="width:60px;height:60px;border-radius:17px;font-size:30px;margin:0 auto 16px;">📊</div>
+                <h1 style="font-size:24px;">Comptabilité Pro</h1>
+                <div style="font-size:13px;color:var(--muted);margin-top:4px;">Portail client</div>
+            </div>
+
+            <div id="authForms">
+                <div id="loginForm">
+                    <h2>Connexion</h2>
+                    <label>Email</label>
+                    <input id="loginEmail" type="email" placeholder="vous@entreprise.fr">
+                    <label>Mot de passe</label>
+                    <input id="loginPassword" type="password" placeholder="••••••••">
+                    <button class="btn-auth" onclick="login()">Se connecter</button>
+                    <div id="loginError"></div>
+                    <div class="auth-link">Pas de compte? <a onclick="toggleAuth()">Créer un compte</a></div>
+                </div>
+
+                <div id="registerForm" style="display:none;">
+                    <h2>Créer un compte</h2>
+                    <label>Nom/Email</label>
+                    <input id="regName" type="text" placeholder="Nom complet ou entreprise">
+                    <label>Email</label>
+                    <input id="regEmail" type="email" placeholder="vous@entreprise.fr">
+                    <label>Mot de passe</label>
+                    <input id="regPassword" type="password" placeholder="••••••••">
+                    <label>Confirmer mot de passe</label>
+                    <input id="regPasswordConfirm" type="password" placeholder="••••••••">
+                    <label>Activité</label>
+                    <select id="regActivity" style="width:100%;background:var(--panel-2);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 12px;font-size:14px;margin-top:6px;">
+                        <option value="service">Services/Libéral</option>
+                        <option value="commerce">Commerce/Vente</option>
+                        <option value="artisan">Artisan</option>
+                    </select>
+                    <button class="btn-auth" onclick="register()">Créer mon compte</button>
+                    <div id="registerError"></div>
+                    <div class="auth-link">Vous avez un compte? <a onclick="toggleAuth()">Se connecter</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TABLEAU DE BORD -->
+<div id="dashboardScreen" class="screen">
+    <div class="container">
+        <header>
+            <div class="brand">
+                <div class="logo">📊</div>
+                <div>
+                    <h1>Comptabilité Pro</h1>
+                    <div style="color:var(--muted);font-size:12px;">Portail client</div>
+                </div>
+            </div>
+            <div class="user-panel">
+                <div class="user-info">
+                    <div class="user-name" id="currentUserName">Utilisateur</div>
+                    <div style="color:var(--green);font-size:11px;">● Connecté</div>
+                </div>
+                <button class="secondary" onclick="logout()">Déconnexion</button>
+            </div>
+        </header>
+
+        <!-- Résumé rapide -->
+        <div class="summary" id="quickSummary"></div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="switchDashTab('overview')">📊 Aperçu</button>
+            <button class="tab" onclick="switchDashTab('accounting')">💼 Comptabilité</button>
+            <button class="tab" onclick="switchDashTab('team')">👥 Équipe</button>
+            <button class="tab" onclick="switchDashTab('settings')">⚙️ Paramètres</button>
+        </div>
+
+        <!-- OVERVIEW -->
+        <div id="overview" class="tab-content active">
+            <div class="grid">
+                <div class="panel">
+                    <h2>Statut Compte</h2>
+                    <div class="stat good">
+                        <div class="label">Forfait</div>
+                        <div class="value">Professionnel</div>
+                    </div>
+                    <div class="stat">
+                        <div class="label">Factures cette année</div>
+                        <div class="value" id="overviewInvoices">0</div>
+                    </div>
+                    <div class="stat">
+                        <div class="label">CA cette année</div>
+                        <div class="value good" id="overviewCA">0 €</div>
+                    </div>
+                </div>
+                <div class="panel">
+                    <h2>Accès Rapide</h2>
+                    <div style="display:grid;gap:10px;">
+                        <a href="comptabilite_autoentrepreneur.html" style="display:block;background:var(--accent);color:white;padding:12px;border-radius:8px;text-decoration:none;text-align:center;font-weight:600;">
+                            📄 Ouvrir Comptabilité Complète
+                        </a>
+                        <button class="secondary" onclick="downloadTemplate()">📥 Télécharger modèle</button>
+                        <button class="secondary" onclick="downloadBackup()">💾 Exporter données</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACCOUNTING -->
+        <div id="accounting" class="tab-content">
+            <div class="panel">
+                <h2>Résumé Comptable</h2>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <div class="stat">
+                        <div class="label">CA Année (HT)</div>
+                        <div class="value good" id="acctCA">0 €</div>
+                    </div>
+                    <div class="stat">
+                        <div class="label">Charges (HT)</div>
+                        <div class="value bad" id="acctCharges">0 €</div>
+                    </div>
+                    <div class="stat good">
+                        <div class="label">Marge Brute</div>
+                        <div class="value" id="acctMargin">0 €</div>
+                    </div>
+                    <div class="stat">
+                        <div class="label">URSSAF Annuel</div>
+                        <div class="value" id="acctUrssaf">0 €</div>
+                    </div>
+                </div>
+                <hr style="border:none;border-top:1px solid var(--border);margin:20px 0;">
+                <h3 style="margin-bottom:12px;">Dernières Factures</h3>
+                <div id="acctInvoices"></div>
+            </div>
+        </div>
+
+        <!-- TEAM -->
+        <div id="team" class="tab-content">
+            <div class="panel">
+                <h2>Gestion de l'Équipe</h2>
+                <div style="margin-bottom:16px;">
+                    <label>Ajouter un utilisateur</label>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                        <input id="teamUserEmail" type="email" placeholder="email@entreprise.fr">
+                        <button onclick="addTeamMember()">+ Ajouter</button>
+                    </div>
+                </div>
+                <h3 style="margin-bottom:12px;">Utilisateurs</h3>
+                <table>
+                    <tr style="background:var(--panel-2);">
+                        <th>Email</th>
+                        <th>Rôle</th>
+                        <th>Accès</th>
+                    </tr>
+                    <tr>
+                        <td id="teamOwnerEmail">vous@entreprise.fr</td>
+                        <td><span class="badge ok">Admin</span></td>
+                        <td><span class="badge ok">Complet</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div id="settings" class="tab-content">
+            <div class="grid">
+                <div class="panel">
+                    <h2>Profil</h2>
+                    <label>Nom</label>
+                    <input id="settingsName" placeholder="Votre nom">
+                    <label>Email</label>
+                    <input id="settingsEmail" type="email" placeholder="email@entreprise.fr" disabled style="opacity:0.6;">
+                    <label>Activité</label>
+                    <input id="settingsActivity" placeholder="Services/Artisan/Commerce" disabled style="opacity:0.6;">
+                    <button style="margin-top:16px;" onclick="updateProfile()">💾 Enregistrer</button>
+                </div>
+                <div class="panel">
+                    <h2>Sécurité</h2>
+                    <label>Nouveau mot de passe</label>
+                    <input id="newPassword" type="password" placeholder="••••••••">
+                    <label>Confirmer mot de passe</label>
+                    <input id="confirmPassword" type="password" placeholder="••••••••">
+                    <button style="margin-top:16px;" onclick="changePassword()">🔐 Changer mot de passe</button>
+                    <hr style="border:none;border-top:1px solid var(--border);margin:20px 0;">
+                    <button class="danger" onclick="deleteAccount()">🗑️ Supprimer le compte</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   PORTAIL CLIENT COMPTABILITÉ
+   ============================================================ */
+
+class User {
+    constructor(name, email, password, activity) {
+        this.id = Date.now();
+        this.name = name;
+        this.email = email;
+        this.password = hashPassword(password);
+        this.activity = activity;
+        this.createdAt = new Date();
+        this.invoices = [];
+        this.urssafHistory = [];
+    }
+}
+
+function hashPassword(pwd) {
+    let hash = 0, i, chr;
+    for (i = 0; i < pwd.length; i++) {
+        chr = pwd.charCodeAt(i);
+        hash = ((hash << 5) - hash) + chr;
+        hash |= 0;
+    }
+    return hash.toString();
+}
+
+// Storage
+let users = JSON.parse(localStorage.getItem("users")) || [];
+let currentUser = null;
+
+function toggleAuth() {
+    document.getElementById("loginForm").style.display = document.getElementById("loginForm").style.display === "none" ? "block" : "none";
+    document.getElementById("registerForm").style.display = document.getElementById("registerForm").style.display === "none" ? "block" : "none";
+    document.getElementById("loginError").textContent = "";
+    document.getElementById("registerError").textContent = "";
+}
+
+function register() {
+    const name = document.getElementById("regName").value.trim();
+    const email = document.getElementById("regEmail").value.trim();
+    const pwd = document.getElementById("regPassword").value;
+    const pwdConfirm = document.getElementById("regPasswordConfirm").value;
+    const activity = document.getElementById("regActivity").value;
+
+    if (!name || !email || !pwd || !pwdConfirm) {
+        document.getElementById("registerError").innerHTML = `<div class="error">Remplissez tous les champs</div>`;
+        return;
+    }
+
+    if (pwd !== pwdConfirm) {
+        document.getElementById("registerError").innerHTML = `<div class="error">Les mots de passe ne correspondent pas</div>`;
+        return;
+    }
+
+    if (users.find(u => u.email === email)) {
+        document.getElementById("registerError").innerHTML = `<div class="error">Cet email existe déjà</div>`;
+        return;
+    }
+
+    const user = new User(name, email, pwd, activity);
+    users.push(user);
+    localStorage.setItem("users", JSON.stringify(users));
+
+    document.getElementById("registerError").innerHTML = `<div class="success">✓ Compte créé! Connectez-vous.</div>`;
+    setTimeout(() => toggleAuth(), 1500);
+}
+
+function login() {
+    const email = document.getElementById("loginEmail").value.trim();
+    const pwd = document.getElementById("loginPassword").value;
+
+    if (!email || !pwd) {
+        document.getElementById("loginError").innerHTML = `<div class="error">Email et mot de passe requis</div>`;
+        return;
+    }
+
+    const user = users.find(u => u.email === email && u.password === hashPassword(pwd));
+    if (!user) {
+        document.getElementById("loginError").innerHTML = `<div class="error">Email ou mot de passe incorrect</div>`;
+        return;
+    }
+
+    currentUser = user;
+    localStorage.setItem("currentUser", JSON.stringify(currentUser));
+    switchScreen("dashboard");
+    loadDashboard();
+    toast("Bienvenue " + user.name + "!", true);
+}
+
+function logout() {
+    if (confirm("Êtes-vous sûr de vouloir vous déconnecter?")) {
+        currentUser = null;
+        localStorage.removeItem("currentUser");
+        switchScreen("auth");
+        document.getElementById("loginEmail").value = "";
+        document.getElementById("loginPassword").value = "";
+        document.getElementById("loginError").textContent = "";
+    }
+}
+
+function switchScreen(screen) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById(screen + "Screen").classList.add("active");
+}
+
+function switchDashTab(tab) {
+    document.querySelectorAll(".tab-content").forEach(t => t.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+    document.getElementById(tab).classList.add("active");
+    event.target.classList.add("active");
+}
+
+function loadDashboard() {
+    document.getElementById("currentUserName").textContent = currentUser.name;
+    document.getElementById("settingsName").value = currentUser.name;
+    document.getElementById("settingsEmail").value = currentUser.email;
+    document.getElementById("settingsActivity").value = currentUser.activity;
+    document.getElementById("teamOwnerEmail").textContent = currentUser.email;
+
+    // Résumé rapide
+    document.getElementById("quickSummary").innerHTML = `
+        <div class="summary-card">
+            <div class="lbl">Factures</div>
+            <div class="num">${currentUser.invoices.length}</div>
+        </div>
+        <div class="summary-card">
+            <div class="lbl">CA (€)</div>
+            <div class="num">${(currentUser.invoices.reduce((s, i) => s + (i.amountHT || 0), 0)).toFixed(0)}</div>
+        </div>
+        <div class="summary-card">
+            <div class="lbl">Abonnement</div>
+            <div class="num" style="color:var(--green);">Pro</div>
+        </div>
+        <div class="summary-card">
+            <div class="lbl">Quota API</div>
+            <div class="num" style="color:var(--blue);">∞</div>
+        </div>
+    `;
+
+    // Overview
+    document.getElementById("overviewInvoices").textContent = currentUser.invoices.length;
+    document.getElementById("overviewCA").textContent = (currentUser.invoices.filter(i => i.type === "client").reduce((s, i) => s + (i.amountHT || 0), 0)).toFixed(2) + " €";
+
+    // Accounting
+    const clientCA = currentUser.invoices.filter(i => i.type === "client").reduce((s, i) => s + (i.amountHT || 0), 0);
+    const supplierCharges = currentUser.invoices.filter(i => i.type === "supplier").reduce((s, i) => s + (i.amountHT || 0), 0);
+    const rate = { service: 0.233, commerce: 0.22, artisan: 0.233 }[currentUser.activity] || 0.23;
+    const urssaf = clientCA * rate;
+
+    document.getElementById("acctCA").textContent = clientCA.toFixed(2) + " €";
+    document.getElementById("acctCharges").textContent = supplierCharges.toFixed(2) + " €";
+    document.getElementById("acctMargin").textContent = (clientCA - supplierCharges).toFixed(2) + " €";
+    document.getElementById("acctUrssaf").textContent = urssaf.toFixed(2) + " €";
+
+    if (!currentUser.invoices.length) {
+        document.getElementById("acctInvoices").innerHTML = `<div class="empty">Aucune facture. <a href="comptabilite_autoentrepreneur.html">Ajouter une facture →</a></div>`;
+    } else {
+        document.getElementById("acctInvoices").innerHTML = currentUser.invoices.slice(-5).reverse().map(i => `
+            <div style="background:var(--panel-2);border-radius:8px;padding:10px;margin-bottom:8px;font-size:13px;">
+                <div style="display:flex;justify-content:space-between;">
+                    <div><strong>${i.ref || "FAC"}</strong> — ${i.third || "Tiers"}</div>
+                    <div style="color:${i.type==='client'?'var(--green)':'var(--red)'}"><strong>${i.amountHT || 0} €</strong></div>
+                </div>
+            </div>
+        `).join("");
+    }
+}
+
+function updateProfile() {
+    currentUser.name = document.getElementById("settingsName").value;
+    const idx = users.findIndex(u => u.id === currentUser.id);
+    users[idx] = currentUser;
+    localStorage.setItem("users", JSON.stringify(users));
+    localStorage.setItem("currentUser", JSON.stringify(currentUser));
+    toast("Profil mis à jour", true);
+}
+
+function changePassword() {
+    const pwd1 = document.getElementById("newPassword").value;
+    const pwd2 = document.getElementById("confirmPassword").value;
+
+    if (!pwd1 || !pwd2) { toast("Remplissez les deux champs", false); return; }
+    if (pwd1 !== pwd2) { toast("Les mots de passe ne correspondent pas", false); return; }
+
+    currentUser.password = hashPassword(pwd1);
+    const idx = users.findIndex(u => u.id === currentUser.id);
+    users[idx] = currentUser;
+    localStorage.setItem("users", JSON.stringify(users));
+    localStorage.setItem("currentUser", JSON.stringify(currentUser));
+    document.getElementById("newPassword").value = "";
+    document.getElementById("confirmPassword").value = "";
+    toast("Mot de passe changé", true);
+}
+
+function deleteAccount() {
+    if (confirm("⚠️ Cela supprimera VOTRE COMPTE définitivement. Êtes-vous sûr?")) {
+        if (prompt("Tapez votre email pour confirmer:") === currentUser.email) {
+            users = users.filter(u => u.id !== currentUser.id);
+            localStorage.setItem("users", JSON.stringify(users));
+            logout();
+            toast("Compte supprimé", true);
+        }
+    }
+}
+
+function addTeamMember() {
+    const email = document.getElementById("teamUserEmail").value.trim();
+    if (!email) { toast("Email requis", false); return; }
+    toast("Invitation envoyée à " + email, true);
+    document.getElementById("teamUserEmail").value = "";
+}
+
+function downloadTemplate() {
+    const csv = "Date,Type,Référence,Tiers,Description,Montant HT,TVA %\n" +
+        "2024-01-15,client,FAC-001,Entreprise A,Prestation,1000,20\n" +
+        "2024-01-20,supplier,ACHAT-001,Fournisseur B,Fournitures,500,20";
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "modele_factures.csv";
+    link.click();
+}
+
+function downloadBackup() {
+    const backup = JSON.stringify(currentUser, null, 2);
+    const blob = new Blob([backup], { type: "application/json;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "backup_comptabilite_" + new Date().toISOString().slice(0, 10) + ".json";
+    link.click();
+    toast("Backup téléchargé", true);
+}
+
+let toastTimer;
+function toast(msg, ok) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.className = "toast show " + (ok ? "ok" : "err");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 3000);
+}
+
+// Vérifier si connecté
+if (localStorage.getItem("currentUser")) {
+    currentUser = JSON.parse(localStorage.getItem("currentUser"));
+    switchScreen("dashboard");
+    loadDashboard();
+}
+</script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function (e) { console.warn("SW:", e); });
+    });
+  }
+</script>
+</body>
+</html>
