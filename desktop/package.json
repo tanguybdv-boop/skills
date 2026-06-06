@@ -2,7 +2,11 @@
   "name": "comptabilite-pro",
   "version": "1.0.0",
   "description": "Logiciel de comptabilité pour autoentrepreneur — factures, URSSAF, TVA, déclarations.",
-  "author": "Comptabilité Pro",
+  "author": {
+    "name": "Comptabilité Pro",
+    "email": "contact@comptabilite.pro"
+  },
+  "homepage": "https://github.com/tanguybdv-boop/skills",
   "license": "MIT",
   "main": "main.js",
   "scripts": {
@@ -54,6 +58,7 @@
         "deb"
       ],
       "category": "Office",
+      "maintainer": "Comptabilité Pro <contact@comptabilite.pro>",
       "icon": "assets/icon.png"
     }
   }
