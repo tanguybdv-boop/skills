@@ -115,6 +115,7 @@ def example_1_basic_tasks():
         "Process numbers",
         "filter",
         {
+            "action": "filter",
             "data": list(range(1, 11)),
             "condition": lambda x: x % 2 == 0,
         },
@@ -124,6 +125,7 @@ def example_1_basic_tasks():
         "Calculate fibonacci",
         "calculate",
         {
+            "action": "calculate",
             "expression": "sum([1, 1, 2, 3, 5, 8, 13])",
             "context": {},
         },
@@ -202,6 +204,7 @@ def example_3_mixed_workload():
             "Filter large numbers",
             "filter",
             {
+                "action": "filter",
                 "data": list(range(1, 101)),
                 "condition": lambda x: x > 50,
             },
@@ -209,7 +212,7 @@ def example_3_mixed_workload():
         interface.submit_task(
             "Calculate sum",
             "calculate",
-            {"expression": "sum(range(1, 101))", "context": {}},
+            {"action": "calculate", "expression": "sum(range(1, 101))", "context": {}},
         ),
         interface.submit_task(
             "Completion notification",
@@ -238,6 +241,7 @@ def example_4_priority_handling():
     print("="*60)
 
     interface = AgentInterface()
+    interface.register_agent(LoggerAgent())
 
     # Submit tasks with different priorities
     priority_tasks = [

@@ -189,6 +189,17 @@ class DataAgent(Agent):
 class ComputeAgent(Agent):
     """Agent for computational tasks"""
 
+    # Whitelist of safe builtins exposed to evaluated expressions. Avoids the
+    # security risk of full builtins while keeping common math helpers usable.
+    SAFE_BUILTINS = {
+        name: getattr(__import__("builtins"), name)
+        for name in (
+            "abs", "min", "max", "sum", "round", "len", "pow",
+            "range", "sorted", "map", "filter", "list", "tuple",
+            "set", "dict", "int", "float", "bool", "str", "enumerate", "zip",
+        )
+    }
+
     def __init__(self):
         super().__init__("ComputeAgent", ["calculate", "analyze", "optimize"])
 
@@ -204,7 +215,11 @@ class ComputeAgent(Agent):
 
             if action == "calculate":
                 expression = task.params.get("expression")
-                output = eval(expression, {"__builtins__": {}}, task.params.get("context", {}))
+                output = eval(
+                    expression,
+                    {"__builtins__": self.SAFE_BUILTINS},
+                    task.params.get("context", {}),
+                )
             else:
                 raise ValueError(f"Unknown action: {action}")
 
@@ -267,12 +282,16 @@ class TaskManager:
 
         agent = self.get_best_agent(task)
         if not agent:
-            return TaskResult(
+            result = TaskResult(
                 task_id=task.id,
                 success=False,
                 output=None,
                 error=f"No agent capable of handling task type: {task.task_type}",
             )
+            task.status = TaskStatus.FAILED
+            task.result = result
+            self.execution_history.append(result)
+            return result
 
         task.status = TaskStatus.ASSIGNED
         task.assigned_agent = agent.name
