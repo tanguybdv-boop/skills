@@ -170,6 +170,7 @@
     <div class="tabs">
         <button class="tab active" onclick="switchTab('dashboard')">📈 Tableau de bord</button>
         <button class="tab" onclick="switchTab('invoices')">📄 Factures</button>
+        <button class="tab" onclick="switchTab('planning')">📅 Planning</button>
         <button class="tab" onclick="switchTab('urssaf')">🛡️ URSSAF</button>
         <button class="tab" onclick="switchTab('vat')">📋 TVA</button>
         <button class="tab" onclick="switchTab('reports')">📑 Rapports</button>
@@ -221,6 +222,43 @@
             <div class="panel">
                 <h2>Toutes les factures</h2>
                 <div id="invoicesList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PLANNING -->
+    <div id="planning" class="tab-content">
+        <div class="grid">
+            <div class="panel">
+                <h2>Définir budgets</h2>
+                <label>Mois</label>
+                <input id="planMonth" type="month">
+                <label>Objectif CA (€)</label>
+                <input id="planTargetCA" type="number" step="0.01" placeholder="5000.00">
+                <label>Budget charges (€)</label>
+                <input id="planBudgetCharges" type="number" step="0.01" placeholder="1000.00">
+                <label>Marge cible (%)</label>
+                <input id="planTargetMargin" type="number" step="0.01" value="30" placeholder="30">
+                <div class="btn-group">
+                    <button onclick="addBudgetPlan()">+ Ajouter plan</button>
+                    <button class="secondary" onclick="resetPlanForm()">Annuler</button>
+                </div>
+            </div>
+            <div class="panel">
+                <h2>Tous les plans budgétaires</h2>
+                <div id="budgetPlansList"></div>
+            </div>
+        </div>
+        <div style="margin-top: 20px;">
+            <div class="panel">
+                <h2>📊 Comparaison Réel vs Objectif</h2>
+                <div id="planComparison"></div>
+            </div>
+        </div>
+        <div style="margin-top: 20px;">
+            <div class="panel">
+                <h2>💡 Prévisions financières</h2>
+                <div id="planForecasts"></div>
             </div>
         </div>
     </div>
@@ -392,6 +430,7 @@ class VatStatement {
 
 let invoices = (Storage.get("invoices") || []).map(reviveInvoice);
 let ursafHistory = Storage.get("ursafHistory") || [];
+let budgetPlans = Storage.get("budgetPlans") || [];
 let settings = Storage.get("settings") || {
     name: "Ma Entreprise",
     siret: "",
@@ -525,6 +564,167 @@ function exportReport(type) {
     toast("Rapport généré", true);
 }
 
+function addBudgetPlan() {
+    const month = document.getElementById("planMonth").value;
+    const targetCA = parseFloat(document.getElementById("planTargetCA").value);
+    const budgetCharges = parseFloat(document.getElementById("planBudgetCharges").value);
+    const targetMargin = parseFloat(document.getElementById("planTargetMargin").value);
+
+    if (!month || isNaN(targetCA) || targetCA <= 0 || isNaN(budgetCharges) || budgetCharges < 0) {
+        toast("Remplissez tous les champs valides", false);
+        return;
+    }
+
+    const plan = {
+        id: Date.now(),
+        month,
+        targetCA,
+        budgetCharges,
+        targetMargin,
+        createdAt: new Date().toISOString()
+    };
+
+    budgetPlans.push(plan);
+    Storage.set("budgetPlans", budgetPlans);
+    toast("Plan budgétaire ajouté", true);
+    resetPlanForm();
+    renderBudgetPlans();
+    renderPlanComparison();
+}
+
+function resetPlanForm() {
+    document.getElementById("planMonth").value = new Date().toISOString().slice(0, 7);
+    document.getElementById("planTargetCA").value = "";
+    document.getElementById("planBudgetCharges").value = "";
+    document.getElementById("planTargetMargin").value = "30";
+}
+
+function deleteBudgetPlan(id) {
+    budgetPlans = budgetPlans.filter(p => p.id !== id);
+    Storage.set("budgetPlans", budgetPlans);
+    toast("Plan supprimé", true);
+    renderBudgetPlans();
+    renderPlanComparison();
+}
+
+function renderBudgetPlans() {
+    const list = document.getElementById("budgetPlansList");
+    if (!budgetPlans.length) { list.innerHTML = `<div class="empty">Aucun plan budgétaire</div>`; return; }
+
+    const html = budgetPlans.slice().reverse().map(p => {
+        const expectedMargin = p.targetCA - p.budgetCharges;
+        const expectedMarginPct = p.targetCA > 0 ? (expectedMargin / p.targetCA * 100).toFixed(1) : 0;
+        return `
+            <div style="background:var(--panel-2);border-radius:8px;padding:14px;margin-bottom:10px;border-left:4px solid var(--accent)">
+                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+                    <div>
+                        <div style="font-weight:600;font-size:14px;">${p.month}</div>
+                        <div style="font-size:12px;color:var(--muted);">Objectif CA: ${p.targetCA.toFixed(2)} €</div>
+                    </div>
+                    <button class="danger" style="padding:4px 8px;font-size:11px;" onclick="deleteBudgetPlan(${p.id})">✕</button>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:12px;margin-top:8px;">
+                    <div>Budget charges: <strong>${p.budgetCharges.toFixed(2)} €</strong></div>
+                    <div>Marge attendue: <strong style="color:var(--green)">${expectedMargin.toFixed(2)} € (${expectedMarginPct}%)</strong></div>
+                </div>
+            </div>
+        `;
+    }).join("");
+    list.innerHTML = html;
+}
+
+function renderPlanComparison() {
+    const comp = document.getElementById("planComparison");
+    if (!budgetPlans.length) { comp.innerHTML = `<div class="empty">Créez un plan budgétaire pour voir les comparaisons</div>`; return; }
+
+    const now = new Date();
+    const currentMonth = now.toISOString().slice(0, 7);
+
+    let html = `
+        <table style="width:100%;font-size:12px;">
+            <tr style="background:var(--panel-2);">
+                <th>Mois</th>
+                <th style="text-align:right;">Objectif</th>
+                <th style="text-align:right;">Réel</th>
+                <th style="text-align:right;">Écart</th>
+                <th style="text-align:right;">% de réalisation</th>
+            </tr>
+    `;
+
+    budgetPlans.forEach(plan => {
+        const monthInv = invoices.filter(i => i.date.toISOString().slice(0, 7) === plan.month);
+        const actualCA = monthInv.filter(i => i.type === "client").reduce((s, i) => s + i.amountHT, 0);
+        const ecart = actualCA - plan.targetCA;
+        const pct = plan.targetCA > 0 ? (actualCA / plan.targetCA * 100).toFixed(1) : 0;
+        const ecartColor = ecart >= 0 ? "var(--green)" : "var(--red)";
+
+        html += `
+            <tr>
+                <td><strong>${plan.month}</strong></td>
+                <td style="text-align:right;">${plan.targetCA.toFixed(2)} €</td>
+                <td style="text-align:right;"><strong style="color:var(--blue)">${actualCA.toFixed(2)} €</strong></td>
+                <td style="text-align:right;"><strong style="color:${ecartColor};">${ecart >= 0 ? "+" : ""}${ecart.toFixed(2)} €</strong></td>
+                <td style="text-align:right;">${pct}%</td>
+            </tr>
+        `;
+    });
+
+    html += `</table>`;
+    comp.innerHTML = html;
+}
+
+function renderPlanForecasts() {
+    const fc = document.getElementById("planForecasts");
+    if (!budgetPlans.length) { fc.innerHTML = `<div class="empty">Créez un plan pour voir les prévisions</div>`; return; }
+
+    const now = new Date();
+    const currentMonth = now.toISOString().slice(0, 7);
+
+    const monthlyActual = {};
+    invoices.forEach(i => {
+        const month = i.date.toISOString().slice(0, 7);
+        if (!monthlyActual[month]) monthlyActual[month] = { ca: 0, charges: 0 };
+        if (i.type === "client") monthlyActual[month].ca += i.amountHT;
+        if (i.type === "supplier") monthlyActual[month].charges += i.amountHT;
+    });
+
+    const avgCA = budgetPlans.reduce((s, p) => s + p.targetCA, 0) / budgetPlans.length;
+    const avgCharges = budgetPlans.reduce((s, p) => s + p.budgetCharges, 0) / budgetPlans.length;
+
+    let html = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+            <div class="stat good">
+                <div class="label">CA moyen (objectif)</div>
+                <div class="value">${avgCA.toFixed(2)} €</div>
+            </div>
+            <div class="stat info">
+                <div class="label">Charges moyennes</div>
+                <div class="value">${avgCharges.toFixed(2)} €</div>
+            </div>
+        </div>
+        <div style="background:var(--panel-2);border-radius:8px;padding:14px;font-size:12px;line-height:1.6;">
+            <strong>Analyse des tendances:</strong>
+            <div style="margin-top:10px;color:var(--muted);">
+    `;
+
+    const lastMonth = Object.entries(monthlyActual).sort().reverse()[0];
+    if (lastMonth) {
+        const [month, data] = lastMonth;
+        const projectedYear = data.ca * 12;
+        const avgProjected = (data.ca + data.charges) / 2;
+        html += `
+            <div>📈 Mois dernier (${month}): <strong style="color:var(--green)">${data.ca.toFixed(2)} €</strong> CA</div>
+            <div>Projection annuelle: <strong>${projectedYear.toFixed(2)} €</strong></div>
+            <div style="margin-top:10px;">Si cette tendance se maintient, vous atteindrez ${(projectedYear < 72600 ? "✓ sous le seuil micro" : "⚠️ au-dessus du seuil")}</div>
+        `;
+    } else {
+        html += `<div style="color:var(--muted);">Enregistrez des factures pour voir les prévisions</div>`;
+    }
+
+    html += `</div>`;
+    fc.innerHTML = html;
+}
+
 function saveSettings() {
     settings.name = document.getElementById("settingsName").value;
     settings.siret = document.getElementById("settingsSiret").value;
@@ -648,6 +848,7 @@ function switchTab(tab) {
     document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add("active");
 
     if (tab === "invoices") renderInvoices();
+    if (tab === "planning") { renderBudgetPlans(); renderPlanComparison(); renderPlanForecasts(); }
     if (tab === "urssaf") renderUrsafHistory();
 }
 
@@ -668,6 +869,7 @@ function printReport() {
 document.getElementById("invDate").value = new Date().toISOString().slice(0, 10);
 document.getElementById("ursafPeriod").value = new Date().toISOString().slice(0, 7);
 document.getElementById("vatPeriod").value = new Date().toISOString().slice(0, 7);
+document.getElementById("planMonth").value = new Date().toISOString().slice(0, 7);
 
 // Charger paramètres
 document.getElementById("settingsName").value = settings.name;
@@ -678,6 +880,9 @@ document.getElementById("settingsTaxRegime").value = settings.taxRegime;
 
 updateDashboard();
 renderInvoices();
+renderBudgetPlans();
+renderPlanComparison();
+renderPlanForecasts();
 renderUrsafHistory();
 </script>
 </body>
