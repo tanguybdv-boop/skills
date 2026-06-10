@@ -1,0 +1,9 @@
+{
+  "appId": "fr.comptabilite.pro",
+  "appName": "Comptabilité Pro",
+  "webDir": "www",
+  "backgroundColor": "#0a0d14",
+  "android": {
+    "allowMixedContent": false
+  }
+}

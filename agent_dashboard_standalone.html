@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Agent System — Standalone</title>
+    <style>
+        :root {
+            --bg: #0f1117; --panel: #1a1d27; --panel-2: #232735; --border: #2d3245;
+            --text: #e4e7ef; --muted: #8a90a2; --accent: #6366f1; --accent-hover: #4f52d6;
+            --green: #22c55e; --red: #ef4444; --amber: #f59e0b; --blue: #3b82f6;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: var(--bg); color: var(--text); line-height: 1.5; padding: 24px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 24px; flex-wrap: wrap; gap: 12px;
+        }
+        h1 { font-size: 22px; font-weight: 700; display: flex; align-items: center; gap: 10px; }
+        h1 .logo {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: linear-gradient(135deg, var(--accent), #a855f7);
+            display: grid; place-items: center; font-size: 18px;
+        }
+        .badge-offline {
+            font-size: 12px; color: var(--muted); background: var(--panel-2);
+            border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px;
+        }
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+        .stat-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+        .stat-card .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-card .value { font-size: 30px; font-weight: 700; margin-top: 4px; }
+        .stat-card.completed .value { color: var(--green); }
+        .stat-card.failed .value { color: var(--red); }
+        .stat-card.pending .value { color: var(--amber); }
+        .grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 20px; }
+        @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } .stats { grid-template-columns: repeat(2, 1fr); } }
+        .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+        .panel h2 { font-size: 15px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+        .panel h2 .count { font-size: 12px; color: var(--muted); font-weight: 400; }
+        label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px; margin-top: 14px; }
+        label:first-of-type { margin-top: 0; }
+        input, select, textarea {
+            width: 100%; background: var(--panel-2); border: 1px solid var(--border);
+            color: var(--text); border-radius: 8px; padding: 10px 12px; font-size: 14px; font-family: inherit;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--accent); }
+        button {
+            background: var(--accent); color: white; border: none; border-radius: 8px;
+            padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s;
+        }
+        button:hover { background: var(--accent-hover); }
+        button.secondary { background: var(--panel-2); border: 1px solid var(--border); }
+        button.secondary:hover { background: var(--border); }
+        button.sm { padding: 5px 12px; font-size: 12px; }
+        button.ghost { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+        button.ghost:hover { background: var(--panel-2); color: var(--text); }
+        .btn-row { display: flex; gap: 10px; margin-top: 18px; }
+        .btn-row button { flex: 1; }
+        .agent { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 10px; background: var(--panel-2); margin-bottom: 10px; }
+        .agent .avatar { width: 38px; height: 38px; border-radius: 9px; display: grid; place-items: center; font-size: 18px; background: var(--border); flex-shrink: 0; }
+        .agent .info { flex: 1; min-width: 0; }
+        .agent .name { font-weight: 600; font-size: 14px; }
+        .agent .caps { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .agent .metrics { font-size: 12px; text-align: right; flex-shrink: 0; }
+        .agent .metrics .ok { color: var(--green); }
+        .agent .metrics .err { color: var(--red); }
+        .task { padding: 12px 14px; border-radius: 10px; background: var(--panel-2); margin-bottom: 10px; border-left: 3px solid var(--muted); }
+        .task.completed { border-left-color: var(--green); }
+        .task.failed { border-left-color: var(--red); }
+        .task.pending { border-left-color: var(--amber); }
+        .task .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .task .tname { font-weight: 600; font-size: 14px; }
+        .task .meta { font-size: 12px; color: var(--muted); margin-top: 3px; }
+        .badge { font-size: 11px; padding: 2px 9px; border-radius: 20px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; }
+        .badge.completed { background: rgba(34,197,94,0.15); color: var(--green); }
+        .badge.failed { background: rgba(239,68,68,0.15); color: var(--red); }
+        .badge.pending { background: rgba(245,158,11,0.15); color: var(--amber); }
+        .task .output {
+            margin-top: 8px; padding: 8px 10px; background: var(--bg); border-radius: 6px;
+            font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; color: var(--muted);
+            white-space: pre-wrap; word-break: break-word; max-height: 120px; overflow: auto;
+        }
+        .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 24px 0; }
+        .toast {
+            position: fixed; bottom: 24px; right: 24px; background: var(--panel-2);
+            border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; font-size: 14px;
+            transform: translateY(120%); transition: transform 0.3s; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            z-index: 100; max-width: 320px;
+        }
+        .toast.show { transform: translateY(0); }
+        .toast.ok { border-left: 3px solid var(--green); }
+        .toast.err { border-left: 3px solid var(--red); }
+        .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1><span class="logo">🤖</span> Multi-Agent System</h1>
+        <span class="badge-offline">⚡ 100% local — aucun serveur requis</span>
+    </header>
+
+    <div class="stats">
+        <div class="stat-card total"><div class="label">Total</div><div class="value" id="statTotal">0</div></div>
+        <div class="stat-card completed"><div class="label">Terminées</div><div class="value" id="statCompleted">0</div></div>
+        <div class="stat-card failed"><div class="label">Échouées</div><div class="value" id="statFailed">0</div></div>
+        <div class="stat-card pending"><div class="label">En attente</div><div class="value" id="statPending">0</div></div>
+    </div>
+
+    <div class="grid">
+        <div>
+            <div class="panel" style="margin-bottom: 20px;">
+                <h2>Nouvelle tâche</h2>
+                <label>Nom</label>
+                <input id="taskName" placeholder="Ex: Calcul Fibonacci">
+                <label>Type</label>
+                <select id="taskType" onchange="renderFields()"></select>
+                <div id="dynamicFields"></div>
+                <label>Priorité</label>
+                <input id="taskPriority" type="number" value="0" min="0">
+                <div class="btn-row">
+                    <button onclick="submitTask()">+ Créer</button>
+                    <button class="secondary" onclick="executeAll()">▶ Tout exécuter</button>
+                </div>
+                <div class="btn-row" style="margin-top:10px">
+                    <button class="ghost" onclick="loadExamples()">Charger des exemples</button>
+                    <button class="ghost" onclick="resetAll()">Réinitialiser</button>
+                </div>
+            </div>
+            <div class="panel">
+                <h2>Agents <span class="count" id="agentCount"></span></h2>
+                <div id="agentsList"></div>
+            </div>
+        </div>
+        <div class="panel">
+            <h2>Tâches <span class="count" id="taskCount"></span></h2>
+            <div id="tasksList"><div class="empty">Aucune tâche. Clique sur « Charger des exemples ».</div></div>
+        </div>
+    </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   MOTEUR MULTI-AGENTS — port JavaScript (100% navigateur)
+   ============================================================ */
+
+// Helpers exposés aux expressions (parité avec SAFE_BUILTINS Python)
+const HELPERS = {
+    sum: a => a.reduce((s, x) => s + x, 0),
+    min: (...a) => Math.min(...(a.length === 1 && Array.isArray(a[0]) ? a[0] : a)),
+    max: (...a) => Math.max(...(a.length === 1 && Array.isArray(a[0]) ? a[0] : a)),
+    abs: Math.abs, round: Math.round, pow: Math.pow, len: a => a.length,
+    range: (a, b, step = 1) => {
+        if (b === undefined) { b = a; a = 0; }
+        const out = []; for (let i = a; i < b; i += step) out.push(i); return out;
+    },
+    sorted: a => [...a].sort((x, y) => x - y),
+};
+
+function evalExpr(expr, ctx = {}) {
+    const names = [...Object.keys(HELPERS), ...Object.keys(ctx)];
+    const vals = [...Object.values(HELPERS), ...Object.values(ctx)];
+    // eslint-disable-next-line no-new-func
+    return Function(...names, `"use strict"; return (${expr});`)(...vals);
+}
+
+function parseData(str) {
+    return String(str).split(",").map(s => s.trim()).filter(s => s !== "")
+        .map(s => (isNaN(Number(s)) ? s : Number(s)));
+}
+
+class Agent {
+    constructor(name, capabilities) {
+        this.name = name; this.capabilities = capabilities;
+        this.tasksCompleted = 0; this.tasksFailed = 0;
+    }
+    canHandle(type) { return this.capabilities.includes(type); }
+    run(task) {
+        const start = performance.now();
+        try {
+            const output = this.execute(task);
+            this.tasksCompleted++;
+            return { taskId: task.id, success: true, output, error: null, agentName: this.name, time: performance.now() - start };
+        } catch (e) {
+            this.tasksFailed++;
+            return { taskId: task.id, success: false, output: null, error: e.message, agentName: this.name, time: performance.now() - start };
+        }
+    }
+    execute() { throw new Error("not implemented"); }
+}
+
+// Système de fichiers virtuel en mémoire (le navigateur n'a pas d'accès disque)
+const VFS = { "/readme.txt": "Hello from the virtual filesystem", "/data.csv": "a,b,c\n1,2,3" };
+
+class FileAgent extends Agent {
+    constructor() { super("FileAgent", ["read", "write", "delete", "list"]); }
+    execute(task) {
+        const { action, path, content } = task.params;
+        if (action === "read") { if (!(path in VFS)) throw new Error("File not found: " + path); return VFS[path]; }
+        if (action === "write") { VFS[path] = content; return "File written: " + path; }
+        if (action === "delete") { if (!(path in VFS)) throw new Error("File not found: " + path); delete VFS[path]; return "File deleted: " + path; }
+        if (action === "list") { return Object.keys(VFS); }
+        throw new Error("Unknown action: " + action);
+    }
+}
+
+class DataAgent extends Agent {
+    constructor() { super("DataAgent", ["process", "transform", "filter", "aggregate"]); }
+    execute(task) {
+        const { action } = task.params;
+        const data = Array.isArray(task.params.data) ? task.params.data : parseData(task.params.data || "");
+        if (action === "filter") return data.filter(x => evalExpr(task.params.condition, { x }));
+        if (action === "transform") return data.map(x => evalExpr(task.params.fn, { x }));
+        if (action === "aggregate") {
+            const fn = task.params.fn;
+            if (fn === "sum") return HELPERS.sum(data);
+            if (fn === "min") return Math.min(...data);
+            if (fn === "max") return Math.max(...data);
+            if (fn === "avg") return HELPERS.sum(data) / data.length;
+            if (fn === "count") return data.length;
+            throw new Error("Unknown aggregate fn: " + fn);
+        }
+        throw new Error("Unknown action: " + action);
+    }
+}
+
+class ComputeAgent extends Agent {
+    constructor() { super("ComputeAgent", ["calculate", "analyze", "optimize"]); }
+    execute(task) {
+        const { action, expression, context } = task.params;
+        if (action === "calculate") return evalExpr(expression, context || {});
+        throw new Error("Unknown action: " + action);
+    }
+}
+
+class LoggerAgent extends Agent {
+    constructor() { super("LoggerAgent", ["log", "alert"]); }
+    execute(task) {
+        const { action, message, level = "INFO" } = task.params;
+        const out = `[${level}] ${message}`;
+        if (action === "alert") { console.warn("🚨 ALERT: " + out); return "🚨 ALERT: " + out; }
+        console.log(out); return out;
+    }
+}
+
+class NotificationAgent extends Agent {
+    constructor() { super("NotificationAgent", ["email", "slack", "webhook"]); }
+    execute(task) {
+        const { action, recipient, message } = task.params;
+        if (action === "email") return `Email sent to ${recipient}: ${message}`;
+        if (action === "slack") return `Slack message sent to ${recipient}: ${message}`;
+        if (action === "webhook") return `Webhook triggered: ${message}`;
+        throw new Error("Unknown action: " + action);
+    }
+}
+
+class TaskManager {
+    constructor() { this.agents = {}; this.tasks = {}; this.counter = 0; }
+    register(agent) { this.agents[agent.name] = agent; }
+    add(name, type, params, priority = 0) {
+        const id = "task_" + this.counter++;
+        this.tasks[id] = { id, name, task_type: type, priority, params, status: "pending", assigned_agent: null, result: null };
+        return id;
+    }
+    bestAgent(type) {
+        const capable = Object.values(this.agents).filter(a => a.canHandle(type));
+        if (!capable.length) return null;
+        return capable.reduce((b, a) => (a.tasksFailed / (a.tasksCompleted + 1) < b.tasksFailed / (b.tasksCompleted + 1) ? a : b));
+    }
+    execute(id) {
+        const task = this.tasks[id];
+        const agent = this.bestAgent(task.task_type);
+        if (!agent) {
+            const result = { taskId: id, success: false, output: null, error: "No agent for type: " + task.task_type, agentName: null, time: 0 };
+            task.status = "failed"; task.result = result; return result;
+        }
+        task.assigned_agent = agent.name;
+        const result = agent.run(task);
+        task.status = result.success ? "completed" : "failed";
+        task.result = result;
+        return result;
+    }
+    executeAll() {
+        return Object.keys(this.tasks).filter(id => this.tasks[id].status === "pending").map(id => this.execute(id));
+    }
+    stats() {
+        const t = Object.values(this.tasks);
+        return {
+            total: t.length,
+            completed: t.filter(x => x.status === "completed").length,
+            failed: t.filter(x => x.status === "failed").length,
+            pending: t.filter(x => x.status === "pending").length,
+        };
+    }
+}
+
+/* ============================================================
+   INTERFACE
+   ============================================================ */
+const mgr = new TaskManager();
+[FileAgent, DataAgent, ComputeAgent, LoggerAgent, NotificationAgent].forEach(A => mgr.register(new A()));
+
+const AGENT_ICONS = { FileAgent: "📁", DataAgent: "📊", ComputeAgent: "🧮", LoggerAgent: "📝", NotificationAgent: "📨" };
+
+const FIELDS = {
+    calculate: [{ id: "expression", label: "Expression", ph: "sum([1,1,2,3,5,8,13])" }],
+    filter: [{ id: "data", label: "Données (séparées par ,)", ph: "1,2,3,4,5,6" }, { id: "condition", label: "Condition (avec x)", ph: "x > 3" }],
+    transform: [{ id: "data", label: "Données (séparées par ,)", ph: "1,2,3,4,5" }, { id: "fn", label: "Expression (avec x)", ph: "x ** 2" }],
+    aggregate: [{ id: "data", label: "Données (séparées par ,)", ph: "1,2,3,4,5" }, { id: "fn", label: "Fonction", select: ["sum", "min", "max", "avg", "count"] }],
+    read: [{ id: "path", label: "Chemin", ph: "/readme.txt" }],
+    write: [{ id: "path", label: "Chemin", ph: "/notes.txt" }, { id: "content", label: "Contenu", ph: "mon texte" }],
+    list: [],
+    log: [{ id: "message", label: "Message", ph: "Système démarré" }, { id: "level", label: "Niveau", ph: "INFO", default: "INFO" }],
+    alert: [{ id: "message", label: "Message", ph: "Connexion DB échouée" }],
+    email: [{ id: "recipient", label: "Destinataire", ph: "admin@example.com" }, { id: "message", label: "Message", ph: "Tâche terminée" }],
+};
+
+const TYPE_LABELS = {
+    calculate: "calculate — calcul", filter: "filter — filtrer", transform: "transform — transformer",
+    aggregate: "aggregate — agréger", read: "read — lire fichier", write: "write — écrire fichier",
+    list: "list — lister fichiers", log: "log — journaliser", alert: "alert — alerte", email: "email — envoyer",
+};
+
+function initTypeSelect() {
+    document.getElementById("taskType").innerHTML =
+        Object.keys(FIELDS).map(t => `<option value="${t}">${TYPE_LABELS[t]}</option>`).join("");
+}
+
+function renderFields() {
+    const type = document.getElementById("taskType").value;
+    document.getElementById("dynamicFields").innerHTML = FIELDS[type].map(f => {
+        if (f.select) {
+            return `<label>${f.label}</label><select id="field_${f.id}">${f.select.map(o => `<option>${o}</option>`).join("")}</select>`;
+        }
+        return `<label>${f.label}</label><input id="field_${f.id}" placeholder="${f.ph || ''}" value="${f.default || ''}">`;
+    }).join("") || `<div class="hint" style="margin-top:14px">Aucun paramètre requis.</div>`;
+}
+
+function buildParams(type) {
+    const params = { action: type };
+    FIELDS[type].forEach(f => { params[f.id] = document.getElementById("field_" + f.id).value; });
+    if (type === "calculate") params.context = {};
+    return params;
+}
+
+function submitTask() {
+    const name = document.getElementById("taskName").value.trim();
+    const type = document.getElementById("taskType").value;
+    const priority = parseInt(document.getElementById("taskPriority").value) || 0;
+    if (!name) { toast("Le nom est requis", false); return; }
+    const id = mgr.add(name, type, buildParams(type), priority);
+    document.getElementById("taskName").value = "";
+    toast("Tâche créée : " + id, true);
+    refresh();
+}
+
+function executeTask(id) {
+    const r = mgr.execute(id);
+    toast(r.success ? `✓ ${id} : ${JSON.stringify(r.output)}` : `✗ ${r.error}`, r.success);
+    refresh();
+}
+
+function executeAll() {
+    const results = mgr.executeAll();
+    toast(results.length ? `${results.length} tâche(s) exécutée(s)` : "Aucune tâche en attente", true);
+    refresh();
+}
+
+function loadExamples() {
+    mgr.add("Calcul Fibonacci", "calculate", { action: "calculate", expression: "sum([1,1,2,3,5,8,13,21])", context: {} });
+    mgr.add("Somme 1..100", "calculate", { action: "calculate", expression: "sum(range(1,101))", context: {} });
+    mgr.add("Filtrer > 50", "filter", { action: "filter", data: "10,30,55,70,90,40", condition: "x > 50" });
+    mgr.add("Carrés", "transform", { action: "transform", data: "1,2,3,4,5", fn: "x ** 2" });
+    mgr.add("Moyenne", "aggregate", { action: "aggregate", data: "4,8,15,16,23,42", fn: "avg" });
+    mgr.add("Lister fichiers", "list", { action: "list" });
+    mgr.add("Démarrage", "log", { action: "log", message: "Système démarré", level: "INFO" });
+    mgr.add("Alerte critique", "alert", { action: "alert", message: "Connexion DB échouée" });
+    mgr.add("Notifier admin", "email", { action: "email", recipient: "admin@example.com", message: "Pipeline terminé" });
+    toast("9 exemples chargés", true);
+    refresh();
+}
+
+function resetAll() {
+    mgr.tasks = {}; mgr.counter = 0;
+    Object.values(mgr.agents).forEach(a => { a.tasksCompleted = 0; a.tasksFailed = 0; });
+    toast("Réinitialisé", true);
+    refresh();
+}
+
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function refresh() {
+    const agents = Object.values(mgr.agents);
+    document.getElementById("agentCount").textContent = agents.length + " enregistrés";
+    document.getElementById("agentsList").innerHTML = agents.map(a => `
+        <div class="agent">
+            <div class="avatar">${AGENT_ICONS[a.name] || "⚙️"}</div>
+            <div class="info"><div class="name">${a.name}</div><div class="caps">${a.capabilities.join(" · ")}</div></div>
+            <div class="metrics"><div class="ok">✓ ${a.tasksCompleted}</div><div class="err">✗ ${a.tasksFailed}</div></div>
+        </div>`).join("");
+
+    const tasks = Object.values(mgr.tasks);
+    document.getElementById("taskCount").textContent = tasks.length + " au total";
+    const list = document.getElementById("tasksList");
+    if (!tasks.length) { list.innerHTML = `<div class="empty">Aucune tâche. Clique sur « Charger des exemples ».</div>`; }
+    else {
+        list.innerHTML = tasks.slice().reverse().map(t => {
+            const out = t.result ? `<div class="output">${escapeHtml(t.result.success ? JSON.stringify(t.result.output) : t.result.error)}</div>` : "";
+            const run = t.status === "pending" ? `<button class="sm" onclick="executeTask('${t.id}')">▶</button>` : "";
+            return `<div class="task ${t.status}">
+                <div class="top">
+                    <div><div class="tname">${escapeHtml(t.name)}</div>
+                    <div class="meta">${t.id} · ${t.task_type} · ${t.assigned_agent || "non assigné"} · prio ${t.priority}</div></div>
+                    <div style="display:flex;align-items:center;gap:8px"><span class="badge ${t.status}">${t.status}</span>${run}</div>
+                </div>${out}</div>`;
+        }).join("");
+    }
+
+    const s = mgr.stats();
+    statTotal.textContent = s.total; statCompleted.textContent = s.completed;
+    statFailed.textContent = s.failed; statPending.textContent = s.pending;
+}
+
+let toastTimer;
+function toast(msg, ok) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.className = "toast show " + (ok ? "ok" : "err");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 3000);
+}
+
+initTypeSelect();
+renderFields();
+refresh();
+</script>
+</body>
+</html>

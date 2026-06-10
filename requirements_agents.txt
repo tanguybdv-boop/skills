@@ -1,0 +1,13 @@
+# Multi-Agent Interface Requirements
+
+# Core
+graphifyy>=0.8.33
+
+# Web interface
+flask>=3.0.0
+
+# Optional dependencies
+networkx>=3.4
+datasketch>=1.6
+rapidfuzz>=3.0
+tree-sitter>=0.23.0

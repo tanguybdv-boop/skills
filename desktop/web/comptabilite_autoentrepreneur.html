@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comptabilité Autoentrepreneur — Gestion Complète</title>
+    <style>
+        :root {
+            --bg: #0a0d14; --panel: #141925; --panel-2: #1b212f; --panel-3: #222a3a;
+            --border: #252d3f; --border-hi: #34405a;
+            --text: #eef1f8; --muted: #98a1b8; --muted-2: #6b7488;
+            --accent: #7c6cff; --accent-2: #9d8bff; --accent-press: #6354e6;
+            --green: #34d399; --green-bg: rgba(52,211,153,.12);
+            --red: #f87171; --red-bg: rgba(248,113,113,.12);
+            --amber: #fbbf24; --amber-bg: rgba(251,191,36,.12);
+            --blue: #60a5fa; --blue-bg: rgba(96,165,250,.12);
+            --shadow: 0 8px 30px rgba(0,0,0,.35); --shadow-sm: 0 2px 10px rgba(0,0,0,.22);
+            --radius: 16px; --radius-sm: 10px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--text); line-height: 1.55; padding: 28px;
+            background:
+                radial-gradient(1200px 600px at 12% -10%, rgba(124,108,255,.10), transparent 55%),
+                radial-gradient(900px 500px at 110% 0%, rgba(52,211,153,.06), transparent 50%),
+                var(--bg);
+            -webkit-font-smoothing: antialiased;
+        }
+        ::-webkit-scrollbar { width: 10px; height: 10px; }
+        ::-webkit-scrollbar-thumb { background: var(--border-hi); border-radius: 20px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 28px; flex-wrap: wrap; gap: 16px;
+        }
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .brand .logo {
+            width: 46px; height: 46px; border-radius: 13px; flex-shrink: 0;
+            display: grid; place-items: center; font-size: 24px;
+            background: linear-gradient(140deg, var(--accent), #b07bff 60%, var(--green));
+            box-shadow: 0 6px 18px rgba(124,108,255,.4);
+        }
+        h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+        .meta { font-size: 13px; color: var(--muted); margin-top: 2px; }
+        .header-chip {
+            font-size: 12px; color: var(--muted); background: var(--panel);
+            border: 1px solid var(--border); border-radius: 30px; padding: 8px 14px;
+            display: inline-flex; align-items: center; gap: 8px; box-shadow: var(--shadow-sm);
+        }
+        .header-chip .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); }
+        .tabs {
+            display: flex; gap: 6px; margin-bottom: 26px; flex-wrap: wrap;
+            background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+            padding: 6px; box-shadow: var(--shadow-sm);
+        }
+        .tab {
+            padding: 10px 16px; border: none; background: transparent; color: var(--muted);
+            cursor: pointer; font-size: 13.5px; font-weight: 600; border-radius: 10px;
+            transition: all 0.18s; letter-spacing: -0.01em;
+        }
+        .tab.active { color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); box-shadow: 0 4px 14px rgba(124,108,255,.35); }
+        .tab:not(.active):hover { color: var(--text); background: var(--panel-2); }
+        .tab-content { display: none; animation: fade 0.25s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 1000px) { .grid { grid-template-columns: 1fr; } }
+        .panel {
+            background: linear-gradient(180deg, var(--panel), #11161f);
+            border: 1px solid var(--border); border-radius: var(--radius); padding: 22px;
+            box-shadow: var(--shadow);
+        }
+        .panel h2 { font-size: 16px; font-weight: 700; margin-bottom: 18px; letter-spacing: -0.01em; display: flex; align-items: center; gap: 8px; }
+        label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; margin-top: 14px; font-weight: 500; }
+        label:first-of-type { margin-top: 0; }
+        input, select, textarea {
+            width: 100%; background: var(--panel-2); border: 1px solid var(--border);
+            color: var(--text); border-radius: var(--radius-sm); padding: 11px 13px; font-size: 14px; font-family: inherit;
+            transition: border-color .15s, box-shadow .15s;
+        }
+        input::placeholder, textarea::placeholder { color: var(--muted-2); }
+        input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,108,255,.18); }
+        button {
+            background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: white; border: none;
+            border-radius: var(--radius-sm); padding: 11px 18px; font-size: 14px; font-weight: 600; cursor: pointer;
+            transition: transform .12s, box-shadow .15s, filter .15s; box-shadow: 0 4px 14px rgba(124,108,255,.30);
+        }
+        button:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(124,108,255,.42); }
+        button:active { transform: translateY(0); }
+        button.secondary { background: var(--panel-2); border: 1px solid var(--border); color: var(--text); box-shadow: none; }
+        button.secondary:hover { background: var(--panel-3); border-color: var(--border-hi); }
+        button.danger { background: linear-gradient(135deg, #f87171, #ef4444); box-shadow: 0 4px 14px rgba(248,113,113,.3); }
+        button.danger:hover { filter: brightness(1.05); }
+        .btn-group { display: flex; gap: 10px; margin-top: 18px; }
+        .btn-group button { flex: 1; }
+        .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .stat {
+            background: var(--panel-2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+            padding: 16px 18px; position: relative; overflow: hidden;
+        }
+        .stat::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--muted-2); }
+        .stat.good::before { background: var(--green); }
+        .stat.bad::before { background: var(--red); }
+        .stat.info::before { background: var(--blue); }
+        .stat .label { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+        .stat .value { font-size: 25px; font-weight: 800; margin-top: 6px; letter-spacing: -0.02em; }
+        .stat.good .value { color: var(--green); }
+        .stat.bad .value { color: var(--red); }
+        .stat.info .value { color: var(--blue); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 12px; }
+        th { background: var(--panel-2); padding: 11px 12px; text-align: left; font-weight: 600; color: var(--muted); text-transform: uppercase; font-size: 11px; letter-spacing: .04em; }
+        th:first-child { border-radius: 8px 0 0 8px; } th:last-child { border-radius: 0 8px 8px 0; }
+        td { padding: 11px 12px; border-bottom: 1px solid var(--border); }
+        tbody tr { transition: background .12s; }
+        tbody tr:hover { background: var(--panel-2); }
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 30px; font-size: 11px; font-weight: 700; letter-spacing: .02em; }
+        .badge.client { background: var(--green-bg); color: var(--green); }
+        .badge.supplier { background: var(--blue-bg); color: var(--blue); }
+        .empty { color: var(--muted); text-align: center; padding: 36px 0; font-size: 14px; }
+        .toast {
+            position: fixed; bottom: 28px; right: 28px; background: var(--panel-3);
+            border: 1px solid var(--border-hi); border-radius: 14px; padding: 14px 18px;
+            font-size: 14px; font-weight: 500; transform: translateY(160%); transition: transform 0.35s cubic-bezier(.2,.9,.3,1);
+            box-shadow: var(--shadow); z-index: 100; max-width: 340px;
+        }
+        .toast.show { transform: translateY(0); }
+        .toast.ok { border-left: 4px solid var(--green); }
+        .toast.err { border-left: 4px solid var(--red); }
+        .hint { font-size: 11.5px; color: var(--muted); margin-top: 6px; }
+        .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+        @media (max-width: 700px) { .summary { grid-template-columns: repeat(2, 1fr); } }
+        .summary-card {
+            background: linear-gradient(180deg, var(--panel-2), #161c28); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 18px; box-shadow: var(--shadow-sm);
+            transition: transform .15s, border-color .15s;
+        }
+        .summary-card:hover { transform: translateY(-3px); border-color: var(--border-hi); }
+        .summary-card .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+        .summary-card .num { font-size: 24px; font-weight: 800; margin-top: 6px; letter-spacing: -0.02em; }
+        .section { margin-bottom: 20px; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 200; align-items: center; justify-content: center; }
+        .modal.show { display: flex; }
+        .modal-content { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 26px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow); }
+        .modal h3 { margin-bottom: 16px; font-size: 18px; }
+        .close-btn { float: right; cursor: pointer; font-size: 24px; color: var(--muted); }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <div class="brand">
+            <div class="logo">💼</div>
+            <div>
+                <h1>Comptabilité Autoentrepreneur</h1>
+                <div class="meta">Gestion intégrée : factures, URSSAF, TVA, déclarations</div>
+            </div>
+        </div>
+        <div class="header-chip"><span class="pulse"></span> Données enregistrées localement</div>
+    </header>
+
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('dashboard')">📈 Tableau de bord</button>
+        <button class="tab" onclick="switchTab('invoices')">📄 Factures</button>
+        <button class="tab" onclick="switchTab('urssaf')">🛡️ URSSAF</button>
+        <button class="tab" onclick="switchTab('vat')">📋 TVA</button>
+        <button class="tab" onclick="switchTab('reports')">📑 Rapports</button>
+        <button class="tab" onclick="switchTab('settings')">⚙️ Paramètres</button>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div id="dashboard" class="tab-content active">
+        <div class="summary" id="dashboardSummary"></div>
+        <div class="grid">
+            <div class="panel">
+                <h2>Factures ce mois</h2>
+                <div id="monthInvoices"></div>
+            </div>
+            <div class="panel">
+                <h2>Statut fiscal</h2>
+                <div id="taxStatus"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FACTURES -->
+    <div id="invoices" class="tab-content">
+        <div class="grid">
+            <div class="panel">
+                <h2>Nouvelle facture</h2>
+                <label>Type</label>
+                <select id="invType">
+                    <option value="client">Facture client (vente)</option>
+                    <option value="supplier">Facture fournisseur (achat)</option>
+                </select>
+                <label>Date</label>
+                <input id="invDate" type="date">
+                <label>Numéro / Référence</label>
+                <input id="invRef" placeholder="ex: FAC-001">
+                <label>Tiers (client/fournisseur)</label>
+                <input id="invThird" placeholder="Nom de la société">
+                <label>Description</label>
+                <textarea id="invDesc" placeholder="Détails de la prestation/vente" style="height: 80px;"></textarea>
+                <label>Montant HT (€)</label>
+                <input id="invAmount" type="number" step="0.01" placeholder="0.00">
+                <label>TVA (%)</label>
+                <input id="invVat" type="number" value="20" step="0.01" placeholder="20">
+                <div class="btn-group">
+                    <button onclick="addInvoice()">+ Ajouter</button>
+                    <button class="secondary" onclick="resetInvoiceForm()">Annuler</button>
+                </div>
+            </div>
+            <div class="panel">
+                <h2>Toutes les factures</h2>
+                <div id="invoicesList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- URSSAF -->
+    <div id="urssaf" class="tab-content">
+        <div class="grid">
+            <div class="panel">
+                <h2>Calculatrice URSSAF</h2>
+                <label>Période</label>
+                <input id="ursafPeriod" type="month">
+                <label>Activité</label>
+                <select id="ursafActivity">
+                    <option value="commerce">Commerce / vente (22%)</option>
+                    <option value="service">Services / liberal (23.3%)</option>
+                    <option value="artisan">Artisan (23.3%)</option>
+                </select>
+                <label>Chiffre d'affaires ce mois (€)</label>
+                <input id="ursafCA" type="number" step="0.01" placeholder="0.00">
+                <button onclick="calculateUrsaf()" style="margin-top: 16px;">Calculer cotisations</button>
+                <div id="ursafResult" style="margin-top: 16px;"></div>
+            </div>
+            <div class="panel">
+                <h2>Historique cotisations</h2>
+                <div id="ursafHistory"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TVA -->
+    <div id="vat" class="tab-content">
+        <div class="grid">
+            <div class="panel">
+                <h2>Déclaration TVA</h2>
+                <label>Période</label>
+                <input id="vatPeriod" type="month">
+                <label>Régime</label>
+                <select id="vatRegime">
+                    <option value="normal">Régime normal</option>
+                    <option value="micro">Micro-entreprise</option>
+                </select>
+                <button onclick="generateVatStatement()" style="margin-top: 16px;">Générer déclaration</button>
+                <div id="vatStatement" style="margin-top: 16px;"></div>
+            </div>
+            <div class="panel">
+                <h2>TVA à payer / Crédit</h2>
+                <div id="vatBalance"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RAPPORTS -->
+    <div id="reports" class="tab-content">
+        <div class="panel">
+            <h2>Rapports comptables</h2>
+            <div class="btn-group" style="margin: 16px 0;">
+                <button onclick="exportReport('monthly')">📥 Export mensuel</button>
+                <button class="secondary" onclick="exportReport('annual')">📥 Export annuel</button>
+            </div>
+            <div id="reportContent"></div>
+        </div>
+    </div>
+
+    <!-- PARAMÈTRES -->
+    <div id="settings" class="tab-content">
+        <div class="panel" style="max-width: 500px;">
+            <h2>Paramètres</h2>
+            <label>Nom (nom du business)</label>
+            <input id="settingsName" placeholder="SARL Mon Entreprise">
+            <label>SIRET</label>
+            <input id="settingsSiret" placeholder="12345678901234">
+            <label>E-mail</label>
+            <input id="settingsEmail" placeholder="contact@entreprise.fr">
+            <label>Numéro TVA (si applicable)</label>
+            <input id="settingsTVA" placeholder="FR 12 345 678 901">
+            <label>Régime fiscal par défaut</label>
+            <select id="settingsTaxRegime">
+                <option value="micro">Micro-entreprise</option>
+                <option value="normal">Régime normal</option>
+            </select>
+            <div class="btn-group" style="margin-top: 20px;">
+                <button onclick="saveSettings()">💾 Enregistrer</button>
+                <button class="danger" onclick="resetAllData()">🗑️ Réinitialiser tout</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   PLATEFORME COMPTABLE AUTOENTREPRENEUR
+   ============================================================ */
+
+// Stockage localStorage
+const Storage = {
+    get(key) { return JSON.parse(localStorage.getItem(key) || "null"); },
+    set(key, val) { localStorage.setItem(key, JSON.stringify(val)); },
+    add(key, item) { const arr = this.get(key) || []; arr.push(item); this.set(key, arr); return item; }
+};
+
+// ============ DOMAINES MÉTIER ============
+
+class Invoice {
+    constructor(type, date, ref, third, desc, amount, vat = 20) {
+        this.id = Date.now();
+        this.type = type; // 'client' ou 'supplier'
+        this.date = new Date(date);
+        this.ref = ref;
+        this.third = third;
+        this.desc = desc;
+        this.amountHT = parseFloat(amount);
+        this.vatRate = parseFloat(vat);
+        // Stockés comme propriétés (et non getters) pour survivre à la
+        // sérialisation JSON dans localStorage.
+        this.vatAmount = this.amountHT * this.vatRate / 100;
+        this.amountTTC = this.amountHT * (1 + this.vatRate / 100);
+    }
+}
+
+// Réhydrate une facture lue depuis localStorage : restaure la Date et
+// recalcule les montants si nécessaire (les objets JSON perdent le type Date
+// et toute méthode/getter). Robuste aux anciennes données déjà stockées.
+function reviveInvoice(o) {
+    const amountHT = parseFloat(o.amountHT) || 0;
+    const vatRate = parseFloat(o.vatRate != null ? o.vatRate : 20) || 0;
+    return {
+        ...o,
+        date: new Date(o.date),
+        amountHT,
+        vatRate,
+        vatAmount: amountHT * vatRate / 100,
+        amountTTC: amountHT * (1 + vatRate / 100),
+    };
+}
+
+class UrsafCalculation {
+    static rates = {
+        commerce: 0.22,
+        service: 0.233,
+        artisan: 0.233
+    };
+
+    constructor(activity, ca, period) {
+        this.activity = activity;
+        this.ca = ca;
+        this.period = period;
+        this.rate = UrsafCalculation.rates[activity];
+        this.cotisation = ca * this.rate;
+    }
+}
+
+class VatStatement {
+    constructor(period, invoices) {
+        this.period = period;
+        const clientInv = invoices.filter(i => i.type === "client" && i.date.toISOString().slice(0, 7) === period);
+        const supplierInv = invoices.filter(i => i.type === "supplier" && i.date.toISOString().slice(0, 7) === period);
+
+        this.caHT = clientInv.reduce((s, i) => s + i.amountHT, 0);
+        this.vatCollected = clientInv.reduce((s, i) => s + i.vatAmount, 0);
+        this.vatDeductible = supplierInv.reduce((s, i) => s + i.vatAmount, 0);
+        this.vatToPay = Math.max(0, this.vatCollected - this.vatDeductible);
+        this.vatCredit = Math.max(0, this.vatDeductible - this.vatCollected);
+    }
+}
+
+// ============ LOGIQUE APPLICATIVE ============
+
+let invoices = (Storage.get("invoices") || []).map(reviveInvoice);
+let ursafHistory = Storage.get("ursafHistory") || [];
+let settings = Storage.get("settings") || {
+    name: "Ma Entreprise",
+    siret: "",
+    email: "",
+    tva: "",
+    taxRegime: "micro"
+};
+
+function addInvoice() {
+    const type = document.getElementById("invType").value;
+    const date = document.getElementById("invDate").value;
+    const ref = document.getElementById("invRef").value.trim();
+    const third = document.getElementById("invThird").value.trim();
+    const desc = document.getElementById("invDesc").value.trim();
+    const amount = parseFloat(document.getElementById("invAmount").value);
+    const vat = parseFloat(document.getElementById("invVat").value);
+
+    if (!date || !ref || !third || !desc || isNaN(amount) || amount <= 0) {
+        toast("Remplissez tous les champs", false);
+        return;
+    }
+
+    const inv = new Invoice(type, date, ref, third, desc, amount, vat);
+    invoices.push(inv);
+    Storage.set("invoices", invoices);
+    toast(`Facture ${ref} ajoutée`, true);
+    resetInvoiceForm();
+    renderInvoices();
+    updateDashboard();
+}
+
+function resetInvoiceForm() {
+    document.getElementById("invDate").value = new Date().toISOString().slice(0, 10);
+    document.getElementById("invRef").value = "";
+    document.getElementById("invThird").value = "";
+    document.getElementById("invDesc").value = "";
+    document.getElementById("invAmount").value = "";
+    document.getElementById("invVat").value = "20";
+}
+
+function deleteInvoice(id) {
+    invoices = invoices.filter(i => i.id !== id);
+    Storage.set("invoices", invoices);
+    toast("Facture supprimée", true);
+    renderInvoices();
+    updateDashboard();
+}
+
+function calculateUrsaf() {
+    const period = document.getElementById("ursafPeriod").value;
+    const activity = document.getElementById("ursafActivity").value;
+    const ca = parseFloat(document.getElementById("ursafCA").value);
+
+    if (!period || isNaN(ca) || ca <= 0) {
+        toast("Période et CA requis", false);
+        return;
+    }
+
+    const calc = new UrsafCalculation(activity, ca, period);
+    ursafHistory.push({ period, activity, ca, cotisation: calc.cotisation, timestamp: Date.now() });
+    Storage.set("ursafHistory", ursafHistory);
+
+    document.getElementById("ursafResult").innerHTML = `
+        <div class="stat good">
+            <div class="label">Cotisation URSSAF</div>
+            <div class="value">${calc.cotisation.toFixed(2)} €</div>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:12px;">
+            CA: ${ca.toFixed(2)} € × taux ${(calc.rate * 100).toFixed(1)}% = ${calc.cotisation.toFixed(2)} €
+        </div>
+    `;
+    renderUrsafHistory();
+    toast("Cotisation calculée", true);
+}
+
+function generateVatStatement() {
+    const period = document.getElementById("vatPeriod").value;
+    if (!period) { toast("Sélectionnez une période", false); return; }
+
+    const stmt = new VatStatement(period, invoices);
+    const html = `
+        <div style="background:var(--panel-2);border-radius:8px;padding:16px;font-size:13px;">
+            <div style="margin-bottom:12px;"><strong>Période:</strong> ${period}</div>
+            <div style="margin-bottom:8px;">CA TTC: <strong>${stmt.caHT.toFixed(2)} €</strong></div>
+            <div style="margin-bottom:8px;">TVA collectée: <strong style="color:var(--green)">${stmt.vatCollected.toFixed(2)} €</strong></div>
+            <div style="margin-bottom:12px;">TVA déductible: <strong style="color:var(--blue)">${stmt.vatDeductible.toFixed(2)} €</strong></div>
+            <hr style="border:none;border-top:1px solid var(--border);margin:12px 0;">
+            <div style="font-size:14px;font-weight:700;">
+                ${stmt.vatToPay > 0 ? `TVA à payer: <span style="color:var(--red)">${stmt.vatToPay.toFixed(2)} €</span>` : `Crédit TVA: <span style="color:var(--green)">${stmt.vatCredit.toFixed(2)} €</span>`}
+            </div>
+        </div>
+    `;
+    document.getElementById("vatStatement").innerHTML = html;
+    toast("Déclaration générée", true);
+}
+
+function exportReport(type) {
+    const period = type === "monthly" ? new Date().toISOString().slice(0, 7) : new Date().getFullYear();
+    const filtered = invoices.filter(i =>
+        type === "monthly" ? i.date.toISOString().slice(0, 7) === period : i.date.getFullYear() === period
+    );
+
+    const caClient = filtered.filter(i => i.type === "client").reduce((s, i) => s + i.amountHT, 0);
+    const caSupplier = filtered.filter(i => i.type === "supplier").reduce((s, i) => s + i.amountHT, 0);
+
+    const html = `
+        <div style="background:var(--panel-2);border-radius:8px;padding:16px;font-size:13px;">
+            <h3 style="margin-bottom:12px;">${type === "monthly" ? "Rapport mensuel" : "Rapport annuel"} ${period}</h3>
+            <table>
+                <tr style="background:var(--panel);">
+                    <th>Métrique</th>
+                    <th style="text-align:right;">Montant</th>
+                </tr>
+                <tr>
+                    <td>CA Clients (HT)</td>
+                    <td style="text-align:right;"><strong style="color:var(--green)">${caClient.toFixed(2)} €</strong></td>
+                </tr>
+                <tr>
+                    <td>Charges Fournisseurs (HT)</td>
+                    <td style="text-align:right;"><strong style="color:var(--red)">${caSupplier.toFixed(2)} €</strong></td>
+                </tr>
+                <tr style="background:var(--panel);">
+                    <td><strong>Marge brute</strong></td>
+                    <td style="text-align:right;"><strong>${(caClient - caSupplier).toFixed(2)} €</strong></td>
+                </tr>
+            </table>
+            <button class="secondary" style="margin-top:12px;" onclick="printReport()">🖨️ Imprimer</button>
+        </div>
+    `;
+    document.getElementById("reportContent").innerHTML = html;
+    toast("Rapport généré", true);
+}
+
+function saveSettings() {
+    settings.name = document.getElementById("settingsName").value;
+    settings.siret = document.getElementById("settingsSiret").value;
+    settings.email = document.getElementById("settingsEmail").value;
+    settings.tva = document.getElementById("settingsTVA").value;
+    settings.taxRegime = document.getElementById("settingsTaxRegime").value;
+    Storage.set("settings", settings);
+    toast("Paramètres enregistrés", true);
+}
+
+function resetAllData() {
+    if (confirm("⚠️ Cela supprimera TOUS les données. Êtes-vous sûr?")) {
+        localStorage.clear();
+        invoices = []; ursafHistory = [];
+        location.reload();
+    }
+}
+
+// ============ AFFICHAGE ============
+
+function renderInvoices() {
+    const list = document.getElementById("invoicesList");
+    if (!invoices.length) { list.innerHTML = `<div class="empty">Aucune facture</div>`; return; }
+
+    const html = invoices.map(i => `
+        <div style="background:var(--panel-2);border-radius:8px;padding:12px;margin-bottom:10px;border-left:4px solid ${i.type==='client'?'var(--green)':'var(--blue)'}">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:6px;">
+                <div>
+                    <div style="font-weight:600;font-size:14px;">${i.ref} — ${i.third}</div>
+                    <div style="font-size:12px;color:var(--muted);">${new Date(i.date).toLocaleDateString('fr')} • ${i.desc}</div>
+                </div>
+                <button class="danger" style="padding:4px 8px;font-size:11px;" onclick="deleteInvoice(${i.id})">✕</button>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+                <span><strong>${i.amountHT.toFixed(2)} €</strong> HT</span>
+                <span style="color:var(--muted);">+ ${i.vatAmount.toFixed(2)} € TVA</span>
+                <span style="color:var(--green);">${i.amountTTC.toFixed(2)} € TTC</span>
+            </div>
+        </div>
+    `).join("");
+    list.innerHTML = html;
+}
+
+function renderUrsafHistory() {
+    const list = document.getElementById("ursafHistory");
+    if (!ursafHistory.length) { list.innerHTML = `<div class="empty">Aucun historique</div>`; return; }
+
+    const html = ursafHistory.slice().reverse().map(u => `
+        <div style="background:var(--panel-2);border-radius:8px;padding:12px;margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;font-size:13px;">
+                <span><strong>${u.period}</strong> • ${u.activity}</span>
+                <span style="color:var(--red);">${u.cotisation.toFixed(2)} €</span>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px;">CA: ${u.ca.toFixed(2)} €</div>
+        </div>
+    `).join("");
+    list.innerHTML = html;
+}
+
+function updateDashboard() {
+    const now = new Date();
+    const period = now.toISOString().slice(0, 7);
+    const monthInv = invoices.filter(i => i.date.toISOString().slice(0, 7) === period);
+    const caMonth = monthInv.filter(i => i.type === "client").reduce((s, i) => s + i.amountHT, 0);
+    const chargesMonth = monthInv.filter(i => i.type === "supplier").reduce((s, i) => s + i.amountHT, 0);
+
+    const totalCA = invoices.filter(i => i.type === "client").reduce((s, i) => s + i.amountHT, 0);
+    const totalCharges = invoices.filter(i => i.type === "supplier").reduce((s, i) => s + i.amountHT, 0);
+
+    document.getElementById("dashboardSummary").innerHTML = `
+        <div class="summary-card">
+            <div class="lbl">CA ce mois</div>
+            <div class="num" style="color:var(--green)">${caMonth.toFixed(2)} €</div>
+        </div>
+        <div class="summary-card">
+            <div class="lbl">Charges ce mois</div>
+            <div class="num" style="color:var(--red)">${chargesMonth.toFixed(2)} €</div>
+        </div>
+        <div class="summary-card">
+            <div class="lbl">CA total année</div>
+            <div class="num" style="color:var(--blue)">${totalCA.toFixed(2)} €</div>
+        </div>
+        <div class="summary-card">
+            <div class="lbl">Factures totales</div>
+            <div class="num" style="color:var(--accent)">${invoices.length}</div>
+        </div>
+    `;
+
+    document.getElementById("monthInvoices").innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div class="stat info">
+                <div class="label">Clients</div>
+                <div class="value">${monthInv.filter(i => i.type === "client").length}</div>
+            </div>
+            <div class="stat info">
+                <div class="label">Fournisseurs</div>
+                <div class="value">${monthInv.filter(i => i.type === "supplier").length}</div>
+            </div>
+        </div>
+    `;
+
+    document.getElementById("taxStatus").innerHTML = `
+        <div style="font-size:13px;line-height:1.8;">
+            <div>📍 Régime: <strong>${settings.taxRegime === "micro" ? "Micro-entreprise" : "Régime normal"}</strong></div>
+            <div>📊 CA année: <strong style="color:var(--green)">${totalCA.toFixed(2)} €</strong></div>
+            <div>💰 Marge: <strong style="color:${totalCA-totalCharges>0?'var(--green)':'var(--red)'};">${(totalCA-totalCharges).toFixed(2)} €</strong></div>
+            <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+                <strong>À vérifier:</strong>
+                <div style="font-size:12px;color:var(--muted);margin-top:6px;">
+                    ${totalCA < 72600 ? "✓ Seuil micro-entreprise OK" : "⚠️ Seuil dépassé"}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function switchTab(tab) {
+    document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+    document.querySelectorAll(".tab").forEach(el => el.classList.remove("active"));
+    document.getElementById(tab).classList.add("active");
+    document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add("active");
+
+    if (tab === "invoices") renderInvoices();
+    if (tab === "urssaf") renderUrsafHistory();
+}
+
+let toastTimer;
+function toast(msg, ok) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.className = "toast show " + (ok ? "ok" : "err");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove("show"), 3000);
+}
+
+function printReport() {
+    window.print();
+}
+
+// Initialisation
+document.getElementById("invDate").value = new Date().toISOString().slice(0, 10);
+document.getElementById("ursafPeriod").value = new Date().toISOString().slice(0, 7);
+document.getElementById("vatPeriod").value = new Date().toISOString().slice(0, 7);
+
+// Charger paramètres
+document.getElementById("settingsName").value = settings.name;
+document.getElementById("settingsSiret").value = settings.siret;
+document.getElementById("settingsEmail").value = settings.email;
+document.getElementById("settingsTVA").value = settings.tva;
+document.getElementById("settingsTaxRegime").value = settings.taxRegime;
+
+updateDashboard();
+renderInvoices();
+renderUrsafHistory();
+</script>
+</body>
+</html>
